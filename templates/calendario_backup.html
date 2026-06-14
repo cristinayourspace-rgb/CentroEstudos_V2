@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Calendário do Centro
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>Novo Registo</h2>
+
+    <form method="POST">
+
+        <p>Data</p>
+
+        <input
+            type="date"
+            name="data"
+            required
+        >
+
+        <p>Tipo</p>
+
+        <select
+            name="tipo"
+            required
+        >
+            <option value="Evento">Evento</option>
+            <option value="Reunião">Reunião</option>
+            <option value="Aviso">Aviso</option>
+            <option value="Feriado">Feriado</option>
+            <option value="Paragem Letiva">Paragem Letiva</option>
+            <option value="Férias">Férias</option>
+            <option value="Outros">Outros</option>
+        </select>
+
+        <p>Título</p>
+
+        <input
+            type="text"
+            name="titulo"
+            required
+        >
+
+        <p>Descrição</p>
+
+        <textarea
+            name="descricao"
+            rows="4"
+        ></textarea>
+
+        <p>
+
+            <input
+                type="checkbox"
+                name="nao_letivo"
+                style="width:auto;"
+            >
+
+            Dia não letivo
+
+        </p>
+
+        <button type="submit">
+            Guardar
+        </button>
+
+    </form>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <div
+        style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        "
+    >
+
+        <a
+            href="/calendario?mes={{ mes-1 if mes > 1 else 12 }}&ano={{ ano if mes > 1 else ano-1 }}"
+        >
+            ◀ Mês anterior
+        </a>
+
+        <h2>
+            Calendário do Centro - {{ nome_mes }} {{ ano }}
+        </h2>
+
+        <a
+            href="/calendario?mes={{ mes+1 if mes < 12 else 1 }}&ano={{ ano if mes < 12 else ano+1 }}"
+        >
+            Mês seguinte ▶
+        </a>
+
+    </div>
+
+    <br>
+
+    <div
+        style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            margin-bottom:20px;
+        "
+    >
+
+        <span style="background:#ef4444;color:white;padding:5px 10px;border-radius:4px;">
+            Feriado
+        </span>
+
+        <span style="background:#f97316;color:white;padding:5px 10px;border-radius:4px;">
+            Paragem Letiva
+        </span>
+
+        <span style="background:#facc15;color:black;padding:5px 10px;border-radius:4px;">
+            Férias
+        </span>
+
+        <span style="background:#3b82f6;color:white;padding:5px 10px;border-radius:4px;">
+            Evento
+        </span>
+
+        <span style="background:#22c55e;color:white;padding:5px 10px;border-radius:4px;">
+            Reunião
+        </span>
+
+        <span style="background:#a855f7;color:white;padding:5px 10px;border-radius:4px;">
+            Aviso
+        </span>
+
+        <span style="background:#6b7280;color:white;padding:5px 10px;border-radius:4px;">
+            Outros
+        </span>
+
+    </div>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Seg</th>
+                <th>Ter</th>
+                <th>Qua</th>
+                <th>Qui</th>
+                <th>Sex</th>
+                <th>Sáb</th>
+                <th>Dom</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for semana in calendario_mes %}
+
+            <tr>
+
+            {% for dia in semana %}
+
+                {% set data_atual = "%04d-%02d-%02d"|format(ano, mes, dia) %}
+
+                <td
+                    style="
+                        height:140px;
+                        width:14%;
+                        vertical-align:top;
+
+                        {% if dia != 0
+                           and hoje.day == dia
+                           and hoje.month == mes
+                           and hoje.year == ano %}
+                           border:3px solid #2563eb;
+                           background:#dbeafe;
+                        {% endif %}
+                    "
+                >
+
+                    {% if dia != 0 %}
+
+                        <strong>
+                            {{ dia }}
+                        </strong>
+
+                        <hr>
+
+                        {% if dia in eventos %}
+
+                            {% for evento in eventos[dia] %}
+
+                                <div
+                                    style="
+                                        margin-bottom:5px;
+                                        padding:4px;
+                                        border-radius:4px;
+                                        background:
+                                        {{ cores_tipo.get(evento.tipo, '#e5e7eb') }};
+                                        color:white;
+                                        font-size:12px;
+                                    "
+                                >
+
+                                    <a
+                                        href="/calendario/dia/{{ evento.data }}"
+                                        style="
+                                            color:white;
+                                            text-decoration:none;
+                                        "
+                                    >
+
+                                        {{ evento.titulo }}
+
+                                    </a>
+
+                                </div>
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                    {% endif %}
+
+                </td>
+
+            {% endfor %}
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>
+        Todos os Registos
+    </h2>
+
+    <br>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Título</th>
+                <th>Não Letivo</th>
+                <th>Descrição</th>
+                <th>Editar</th>
+                <th>Apagar</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for evento in lista_eventos %}
+
+            <tr>
+
+                <td>
+                    {{ evento.data }}
+                </td>
+
+                <td>
+
+                    <span
+                        style="
+                            background:
+                            {{ cores_tipo.get(evento.tipo, '#e5e7eb') }};
+                            color:white;
+                            padding:4px 8px;
+                            border-radius:4px;
+                        "
+                    >
+                        {{ evento.tipo }}
+                    </span>
+
+                </td>
+
+                <td>
+                    {{ evento.titulo }}
+                </td>
+
+                <td>
+
+                    {% if evento.nao_letivo %}
+                        Sim
+                    {% else %}
+                        Não
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ evento.descricao }}
+                </td>
+
+                <td>
+
+                    <a
+                        href="/calendario/editar/{{ evento.id }}"
+                    >
+                        Editar
+                    </a>
+
+                </td>
+
+                <td>
+
+                    <a
+                        href="/calendario/apagar/{{ evento.id }}"
+                        onclick="return confirm('Deseja apagar este registo?');"
+                        style="color:red;"
+                    >
+                        Apagar
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

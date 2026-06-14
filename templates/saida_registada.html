@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Sessão Finalizada
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>
+        Sessão Finalizada
+    </h2>
+
+    <br>
+
+    <p>
+        Estudo terminado para
+        <strong>{{ aluno.nome }}</strong>
+    </p>
+
+    <br>
+
+    <a
+        href="{{ whatsapp_link }}"
+        target="_blank"
+        style="
+            display:inline-block;
+            padding:12px 20px;
+            background:#25D366;
+            color:white;
+            text-decoration:none;
+            border-radius:6px;
+        "
+    >
+        📱 Enviar WhatsApp
+    </a>
+
+    <br><br>
+
+    <a href="/frequencias">
+        Voltar às Frequências
+    </a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{% block titulo %}Centro Estudos V2{% endblock %}</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f9;
+}
+
+.header{
+    height:70px;
+    background:#1f2937;
+    color:white;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:0 20px;
+}
+
+.sidebar{
+    position:fixed;
+    top:70px;
+    left:0;
+
+    width:230px;
+    height:calc(100vh - 70px);
+
+    background:#374151;
+}
+
+.sidebar a{
+    display:block;
+    color:white;
+    text-decoration:none;
+    padding:14px 20px;
+}
+
+.sidebar a:hover{
+    background:#4b5563;
+}
+
+.content{
+    margin-left:230px;
+    padding:30px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.08);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th,
+td{
+    border:1px solid #ddd;
+    padding:10px;
+}
+
+th{
+    background:#f3f4f6;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    margin-bottom:15px;
+}
+
+button{
+    padding:10px 20px;
+    border:none;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+    <h2>Centro de Estudos</h2>
+
+    <div>
+
+        {% if session.nome %}
+            {{ session.nome }}
+        {% endif %}
+
+        |
+
+        <a
+            href="/logout"
+            style="color:white;"
+        >
+            Sair
+        </a>
+
+    </div>
+
+</div>
+
+<div class="sidebar">
+
+    <a href="/">
+        Dashboard
+    </a>
+
+    <a href="/alunos">
+        Alunos
+    </a>
+
+    <a href="/turmas">
+        Turmas
+    </a>
+
+    <a href="/frequencias">
+        Frequências
+    </a>
+
+    <a href="/notas">
+        Notas
+    </a>
+
+    <a href="/testes">
+        Testes
+    </a>
+
+    <a href="/calendario">
+        Calendário do Centro
+    </a>
+
+</div>
+
+<div class="content">
+
+    {% block conteudo %}
+    {% endblock %}
+
+</div>
+
+</body>
+</html>
+

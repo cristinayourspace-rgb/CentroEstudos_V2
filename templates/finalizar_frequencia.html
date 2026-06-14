@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Finalizar Frequência
+{% endblock %}
+
+{% block conteudo %}
+
+<style>
+
+.grelha-disciplinas{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(260px, 1fr));
+    gap:20px;
+}
+
+.grupo-disciplinas{
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:16px;
+    border-radius:8px;
+}
+
+.grupo-disciplinas h3{
+    margin-bottom:12px;
+}
+
+.opcao-disciplina{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.opcao-disciplina input{
+    width:auto;
+    margin:0;
+}
+
+.opcao-outros{
+    display:grid;
+    grid-template-columns:auto minmax(180px, 1fr);
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.opcao-outros label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.opcao-outros input[type="checkbox"]{
+    width:auto;
+    margin:0;
+}
+
+.opcao-outros input[type="text"]{
+    margin:0;
+}
+
+.observacoes-saida{
+    margin-top:20px;
+}
+
+@media (max-width: 800px){
+    .grelha-disciplinas{
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+
+<div class="card">
+
+    <h2>Finalizar Sessão</h2>
+
+    <br>
+
+    <p>
+        <strong>Aluno:</strong>
+        {{ aluno.nome }}
+    </p>
+
+    <p>
+        <strong>Código:</strong>
+        {{ aluno.codigo }}
+    </p>
+
+    <p>
+        <strong>Entrada:</strong>
+        {{ frequencia.hora_entrada }}
+    </p>
+
+    <p>
+        <strong>Horas Restantes:</strong>
+        {{ aluno.horas_restantes }}
+    </p>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <form method="POST">
+
+        <h2>Disciplinas Estudadas</h2>
+
+        <br>
+
+        <div class="grelha-disciplinas">
+
+            <div class="grupo-disciplinas">
+
+                <h3>1.º Ciclo</h3>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Português">
+                    Português
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Estudo do Meio">
+                    Estudo do Meio
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Matemática">
+                    Matemática
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Inglês">
+                    Inglês
+                </label>
+
+            </div>
+
+            <div class="grupo-disciplinas">
+
+                <h3>2.º Ciclo</h3>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Português">
+                    Português
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Ciências da Natureza">
+                    Ciências da Natureza
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Inglês">
+                    Inglês
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Matemática">
+                    Matemática
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="HGP">
+                    HGP
+                </label>
+
+            </div>
+
+            <div class="grupo-disciplinas">
+
+                <h3>3.º Ciclo</h3>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Português">
+                    Português
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="História">
+                    História
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Ciências da Natureza">
+                    Ciências da Natureza
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Inglês">
+                    Inglês
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Matemática">
+                    Matemática
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Geografia">
+                    Geografia
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Físico-Química">
+                    Físico-Química
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Francês">
+                    Francês
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Espanhol">
+                    Espanhol
+                </label>
+
+            </div>
+
+            <div class="grupo-disciplinas">
+
+                <h3>Todos os ciclos</h3>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="TPC">
+                    TPC
+                </label>
+
+                <label class="opcao-disciplina">
+                    <input type="checkbox" name="disciplinas" value="Fichas">
+                    Fichas
+                </label>
+
+                <div class="opcao-outros">
+
+                    <label>
+                        <input type="checkbox" name="disciplinas" value="Outros">
+                        Outros
+                    </label>
+
+                    <input
+                        type="text"
+                        name="outros_descricao"
+                        placeholder="Ex.: Matemática A"
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="observacoes-saida">
+
+            <h3>Observações</h3>
+
+            <textarea
+                name="observacoes"
+                rows="5"
+            ></textarea>
+
+        </div>
+
+        <br>
+
+        <button type="submit">
+            Finalizar Sessão
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

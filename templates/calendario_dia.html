@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Detalhes do Dia
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <div
+        style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        "
+    >
+
+        <h2>
+            Detalhes do Dia {{ data }}
+        </h2>
+
+        <a href="/calendario">
+            Voltar ao Calendário
+        </a>
+
+    </div>
+
+</div>
+
+<br>
+
+{% if eventos %}
+
+    {% for evento in eventos %}
+
+        <div class="card">
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:15px;
+                "
+            >
+
+                <h3>
+                    {{ evento.titulo }}
+                </h3>
+
+                <span
+                    style="
+                        background:
+                        {{ cores_tipo.get(evento.tipo, '#6b7280') }};
+                        color:white;
+                        padding:6px 10px;
+                        border-radius:4px;
+                    "
+                >
+                    {{ evento.tipo|replace("Evento", "Teste") }}
+                </span>
+
+            </div>
+
+            <p>
+                <strong>Data:</strong>
+                {{ evento.data }}
+            </p>
+
+            <br>
+
+            {% if evento.origem == "teste" %}
+
+                <p>
+                    <strong>Escola:</strong>
+                    {{ evento.escola or "Sem escola definida" }}
+                </p>
+
+                <p>
+                    <strong>Turma:</strong>
+                    {{ evento.turma or "Sem turma definida" }}
+                </p>
+
+                <br>
+
+                <p>
+                    <strong>Matriz:</strong>
+                </p>
+
+                <p>
+                    {% if evento.matriz %}
+                        {{ evento.matriz }}
+                    {% else %}
+                        Sem matriz definida.
+                    {% endif %}
+                </p>
+
+                <br>
+
+                <p>
+                    <strong>Observações:</strong>
+                </p>
+
+                <p>
+                    {% if evento.descricao %}
+                        {{ evento.descricao }}
+                    {% else %}
+                        Sem observações.
+                    {% endif %}
+                </p>
+
+                <br>
+
+            {% else %}
+
+                <p>
+                    <strong>Descrição:</strong>
+                </p>
+
+                <p>
+
+                    {% if evento.descricao %}
+                        {{ evento.descricao }}
+                    {% else %}
+                        Sem descrição.
+                    {% endif %}
+
+                </p>
+
+                <br>
+
+                <p>
+
+                    <strong>Dia Não Letivo:</strong>
+
+                    {% if evento.nao_letivo %}
+                        Sim
+                    {% else %}
+                        Não
+                    {% endif %}
+
+                </p>
+
+                <br>
+
+            {% endif %}
+
+            <div
+                style="
+                    display:flex;
+                    gap:10px;
+                "
+            >
+
+                <a
+                    href="{{ evento.editar_url }}"
+                    style="
+                        background:#2563eb;
+                        color:white;
+                        padding:8px 14px;
+                        text-decoration:none;
+                        border-radius:6px;
+                    "
+                >
+                    Editar
+                </a>
+
+                <a
+                    href="{{ evento.apagar_url }}"
+                    onclick="return confirm('{{ evento.confirmacao_apagar }}');"
+                    style="
+                        background:#dc2626;
+                        color:white;
+                        padding:8px 14px;
+                        text-decoration:none;
+                        border-radius:6px;
+                    "
+                >
+                    Apagar
+                </a>
+
+            </div>
+
+        </div>
+
+        <br>
+
+    {% endfor %}
+
+{% else %}
+
+    <div class="card">
+
+        <p>
+            Não existem registos para esta data.
+        </p>
+
+    </div>
+
+{% endif %}
+
+{% endblock %}

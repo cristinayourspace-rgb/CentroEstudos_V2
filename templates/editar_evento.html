@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Editar Teste
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <div
+        style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        "
+    >
+
+        <h2>
+            Editar Registo
+        </h2>
+
+        <a href="/calendario">
+            ← Voltar ao Calendário
+        </a>
+
+    </div>
+
+    <br>
+
+    <form method="POST">
+
+        <p>Data</p>
+
+        <input
+            type="date"
+            name="data"
+            value="{{ evento.data }}"
+            required
+        >
+
+        <p>Tipo</p>
+
+        <select
+            name="tipo"
+            required
+        >
+
+            <option
+                value="Teste"
+                {% if evento.tipo == "Teste" or evento.tipo == "Evento" %}
+                selected
+                {% endif %}
+            >
+                Teste
+            </option>
+
+            <option
+                value="Reunião"
+                {% if evento.tipo == "Reunião" %}
+                selected
+                {% endif %}
+            >
+                Reunião
+            </option>
+
+            <option
+                value="Aviso"
+                {% if evento.tipo == "Aviso" %}
+                selected
+                {% endif %}
+            >
+                Aviso
+            </option>
+
+            <option
+                value="Feriado"
+                {% if evento.tipo == "Feriado" %}
+                selected
+                {% endif %}
+            >
+                Feriado
+            </option>
+
+            <option
+                value="Paragem Letiva"
+                {% if evento.tipo == "Paragem Letiva" %}
+                selected
+                {% endif %}
+            >
+                Paragem Letiva
+            </option>
+
+            <option
+                value="Férias"
+                {% if evento.tipo == "Férias" %}
+                selected
+                {% endif %}
+            >
+                Férias
+            </option>
+
+            <option
+                value="Outros"
+                {% if evento.tipo == "Outros" %}
+                selected
+                {% endif %}
+            >
+                Outros
+            </option>
+
+        </select>
+
+        <p>Título</p>
+
+        <input
+            type="text"
+            name="titulo"
+            value="{{ evento.titulo }}"
+            required
+        >
+
+        <p>Descrição</p>
+
+        <textarea
+            name="descricao"
+            rows="5"
+        >{{ evento.descricao }}</textarea>
+
+        <p>
+
+            <input
+                type="checkbox"
+                name="nao_letivo"
+                style="width:auto;"
+                {% if evento.nao_letivo %}
+                checked
+                {% endif %}
+            >
+
+            Dia não letivo
+
+        </p>
+
+        <button type="submit">
+            Guardar Alterações
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

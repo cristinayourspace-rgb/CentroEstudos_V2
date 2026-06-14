@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Configurações
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <!-- DADOS DO CENTRO -->
+
+    <div class="xl:col-span-2">
+
+        <div class="card">
+
+            <h2>Configurações</h2>
+
+            <form method="POST" enctype="multipart/form-data">
+
+                <h3>Dados do Centro</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+                    <div>
+                        <label>Nome do Centro</label>
+
+                        <input
+                            type="text"
+                            name="nome_centro"
+                            value="{{ configuracao.nome_centro }}"
+                        >
+                    </div>
+
+                    <div>
+                        <label>Email</label>
+
+                        <input
+                            type="email"
+                            name="email"
+                            value="{{ configuracao.email }}"
+                        >
+                    </div>
+
+                    <div>
+                        <label>Telefone</label>
+
+                        <input
+                            type="text"
+                            name="telefone"
+                            value="{{ configuracao.telefone }}"
+                        >
+                    </div>
+
+                    <div>
+                        <label>WhatsApp</label>
+
+                        <input
+                            type="text"
+                            name="whatsapp"
+                            value="{{ configuracao.whatsapp }}"
+                        >
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label>Morada</label>
+
+                        <input
+                            type="text"
+                            name="morada"
+                            value="{{ configuracao.morada }}"
+                        >
+                    </div>
+
+                    <div>
+                        <label>Código Postal</label>
+
+                        <input
+                            type="text"
+                            name="codigo_postal"
+                            value="{{ configuracao.codigo_postal }}"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="mt-6">
+
+                    <button
+                        type="submit"
+                        class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-semibold transition"
+                    >
+                        Guardar Alterações
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- COLUNA DIREITA -->
+
+    <div class="space-y-6">
+
+        <!-- LOGÓTIPO -->
+
+        <div class="card">
+
+            <h3>Logótipo</h3>
+
+            {% if configuracao.logo %}
+
+                <div class="text-center my-4">
+
+                    <img
+                        src="{{ url_for('static', filename='logos/' + configuracao.logo) }}"
+                        alt="Logótipo"
+                        style="
+                            max-width:80px;
+                            max-height:80px;
+                            margin:auto;
+                            object-fit:contain;
+                        "
+                    >
+
+                </div>
+
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+
+                <label>Selecionar Novo Logótipo</label>
+
+                <input
+                    type="file"
+                    name="logo"
+                    accept=".png,.jpg,.jpeg,.webp"
+                >
+
+                <button
+                    type="submit"
+                    class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-semibold transition mt-2"
+                >
+                    Atualizar Logótipo
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- UTILIZADORES -->
+
+        <div class="card">
+
+            <h3>Utilizadores</h3>
+
+            <p class="text-gray-600 mb-4">
+                Gerir acessos, permissões e contas da aplicação.
+            </p>
+
+            <a href="/admins">
+
+                <button
+                    type="button"
+                    class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-semibold transition"
+                >
+                    Gerir Utilizadores
+                </button>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

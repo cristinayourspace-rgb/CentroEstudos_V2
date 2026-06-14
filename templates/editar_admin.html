@@ -1,0 +1,81 @@
+﻿{% extends "base.html" %}
+
+{% block titulo %}
+Editar Administrador
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>Editar Administrador</h2>
+
+    <form method="POST">
+
+        <label>Nome</label>
+
+        <input
+            type="text"
+            name="nome"
+            value="{{ admin.nome }}"
+            required
+        >
+
+        <label>Email</label>
+
+        <input
+            type="email"
+            name="email"
+            value="{{ admin.email }}"
+            required
+        >
+
+        <label>Perfil</label>
+
+        <select name="perfil">
+
+            <option
+                value="administrador_geral"
+                {% if admin.perfil == "administrador_geral" %}selected{% endif %}
+            >
+                Administrador Geral
+            </option>
+
+            <option
+                value="administrador"
+                {% if admin.perfil == "administrador" %}selected{% endif %}
+            >
+                Administrador
+            </option>
+
+            <option
+                value="colaborador"
+                {% if admin.perfil == "colaborador" %}selected{% endif %}
+            >
+                Colaborador
+            </option>
+
+        </select>
+
+        <label>Nova Password</label>
+
+        <input
+            type="password"
+            name="password"
+        >
+
+        <small>
+            Deixe vazio para manter a password atual.
+        </small>
+
+        <br><br>
+
+        <button type="submit">
+            Guardar Alterações
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

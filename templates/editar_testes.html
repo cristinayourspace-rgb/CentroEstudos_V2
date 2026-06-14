@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Editar Teste
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>Editar Teste</h2>
+
+    <form method="POST">
+
+        <p>Escola</p>
+
+        <input
+            type="text"
+            name="escola"
+            value="{{ teste.escola }}"
+            required
+        >
+
+        <p>Turma</p>
+
+        <input
+            type="text"
+            name="turma"
+            value="{{ teste.turma }}"
+            required
+        >
+
+        <p>Disciplina</p>
+
+        <input
+            type="text"
+            name="disciplina"
+            value="{{ teste.disciplina }}"
+            required
+        >
+
+        <p>Data</p>
+
+        <input
+            type="date"
+            name="data_teste"
+            value="{{ teste.data_teste }}"
+            required
+        >
+
+        <p>Matriz</p>
+
+        <textarea
+            name="matriz"
+            rows="4"
+        >{{ teste.matriz }}</textarea>
+
+        <p>Observações</p>
+
+        <textarea
+            name="observacoes"
+            rows="4"
+        >{{ teste.observacoes }}</textarea>
+
+        <button type="submit">
+            Guardar Alterações
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

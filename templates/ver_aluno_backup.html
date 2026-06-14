@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Ficha do Aluno
+{% endblock %}
+
+{% block conteudo %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="card">
+
+    <h2>{{ aluno.nome }}</h2>
+
+    <br>
+
+    <p><strong>Código:</strong> {{ aluno.codigo }}</p>
+
+    <p><strong>Escola:</strong> {{ aluno.escola }}</p>
+
+    <p><strong>Ano Escolar:</strong> {{ aluno.ano_escolar }}</p>
+
+    <p>
+        <strong>Turma:</strong>
+
+        {% if aluno.turma %}
+            {{ aluno.turma.nome }}
+        {% else %}
+            Sem turma atribuída
+        {% endif %}
+    </p>
+
+    <p><strong>Encarregado:</strong> {{ aluno.encarregado }}</p>
+
+    <p><strong>Telefone:</strong> {{ aluno.telefone }}</p>
+
+    <p><strong>Email:</strong> {{ aluno.email }}</p>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Gestão de Horas</h2>
+
+    <br>
+
+    <p><strong>Pacote Semanal:</strong> {{ aluno.pacote_horas }} h</p>
+
+    <p><strong>Horas Restantes:</strong> {{ saldo_horas }}</p>
+
+    <p><strong>Total Estudado:</strong> {{ total_horas }}</p>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>QR Code</h2>
+
+    <br>
+
+    <img
+        src="{{ url_for('static', filename='qrcodes/' + aluno.codigo + '.png') }}"
+        width="220"
+    >
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Contacto</h2>
+
+    <br>
+
+    <a
+        href="https://wa.me/{{ aluno.telefone|replace('+','')|replace(' ','') }}"
+        target="_blank"
+    >
+        Abrir WhatsApp
+    </a>
+
+    |
+
+    <a href="/alunos/editar/{{ aluno.id }}">
+        Editar Aluno
+    </a>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Médias por Disciplina</h2>
+
+    <br>
+
+    {% if medias %}
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Disciplina</th>
+                <th>Média</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for item in medias %}
+
+            <tr>
+                <td>{{ item.disciplina }}</td>
+                <td>{{ item.media }}</td>
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    {% else %}
+
+        <p>Sem notas registadas.</p>
+
+    {% endif %}
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Evolução das Notas</h2>
+
+    <br>
+
+    <canvas id="graficoNotas"></canvas>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Histórico de Notas</h2>
+
+    <br>
+
+    {% if notas %}
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Disciplina</th>
+                <th>Nota</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for nota in notas %}
+
+            <tr>
+                <td>{{ nota.disciplina }}</td>
+                <td>{{ nota.nota }}</td>
+                <td>{{ nota.data_avaliacao }}</td>
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    {% else %}
+
+        <p>Sem notas registadas.</p>
+
+    {% endif %}
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Próximos Testes</h2>
+
+    <br>
+
+    <p>Módulo de testes em desenvolvimento.</p>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Histórico de Frequências</h2>
+
+    <br>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Duração</th>
+                <th>Disciplinas</th>
+                <th>Observações</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for f in aluno.frequencias %}
+
+            <tr>
+
+                <td>{{ f.data }}</td>
+                <td>{{ f.hora_entrada }}</td>
+                <td>{{ f.hora_saida }}</td>
+                <td>{{ f.duracao_horas }}</td>
+                <td>{{ f.disciplinas }}</td>
+                <td>{{ f.observacoes }}</td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<script>
+
+const ctx = document.getElementById(
+    "graficoNotas"
+);
+
+new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: {{ labels_grafico | tojson }},
+        datasets: {{ datasets_grafico | tojson }}
+    },
+    options: {
+        responsive: true,
+
+        plugins: {
+            legend: {
+                display: true,
+                position: "top"
+            }
+        },
+
+        scales: {
+
+            y: {
+                min: 0,
+                max: 100,
+                title: {
+                    display: true,
+                    text: "Nota"
+                }
+            },
+
+            x: {
+                title: {
+                    display: true,
+                    text: "Data"
+                }
+            }
+
+        }
+    }
+});
+
+<script>
+
+const ctx = document.getElementById(
+    "graficoNotas"
+);
+
+new Chart(ctx, {
+
+    type: "line",
+
+    data: {
+
+        labels: {{ labels_grafico | tojson }},
+
+        datasets: {{ datasets_grafico | tojson }}
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        plugins: {
+
+            legend: {
+                display: true,
+                position: "top"
+            }
+
+        },
+
+        scales: {
+
+            y: {
+
+                min: 0,
+                max: 100,
+
+                title: {
+                    display: true,
+                    text: "Nota"
+                }
+
+            },
+
+            x: {
+
+                title: {
+                    display: true,
+                    text: "Data"
+                }
+
+            }
+
+        }
+
+    }
+
+});
+
+</script>
+{% endblock %}

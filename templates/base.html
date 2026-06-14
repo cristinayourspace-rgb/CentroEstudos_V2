@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block titulo %}Centro Estudos V2{% endblock %}
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+
+        body{
+            background:#f5f7fa;
+            font-family:'Inter',sans-serif;
+        }
+
+        .card{
+            background:white;
+            border-radius:18px;
+            padding:24px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.06);
+            margin-bottom:20px;
+            border:1px solid #e5e7eb;
+        }
+
+        .card h2{
+            font-size:24px;
+            font-weight:700;
+            margin-bottom:16px;
+            color:#1f2937;
+        }
+
+        .card h3{
+            font-size:18px;
+            font-weight:600;
+            margin-bottom:10px;
+            color:#374151;
+        }
+
+        input,
+        select,
+        textarea{
+            width:100%;
+            padding:12px;
+            border:1px solid #d1d5db;
+            border-radius:12px;
+            margin-bottom:12px;
+            background:white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus{
+            outline:none;
+            border-color:#2563eb;
+            box-shadow:0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        button{
+            background:#2563eb;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:12px;
+            cursor:pointer;
+            font-weight:600;
+        }
+
+        button:hover{
+            opacity:0.92;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+        }
+
+        th{
+            text-align:left;
+            background:#f3f4f6;
+            padding:12px;
+            font-weight:600;
+        }
+
+        td{
+            padding:12px;
+            border-bottom:1px solid #e5e7eb;
+        }
+
+        a{
+            text-decoration:none;
+        }
+
+        hr{
+            margin:24px 0;
+            border:none;
+            border-top:1px solid #e5e7eb;
+        }
+
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+    <div class="w-72 bg-white flex flex-col justify-between m-4 rounded-3xl shadow-2xl border border-gray-200">
+
+        <div>
+
+            <div class="px-6 py-8 border-b border-gray-200 text-center">
+
+    {% if configuracao_global and configuracao_global.logo %}
+
+        <img
+            src="{{ url_for('static', filename='logos/' + configuracao_global.logo) }}"
+            alt="Logótipo"
+            style="
+                width:140px;
+                height:140px;
+                object-fit:contain;
+                margin:0 auto 12px auto;
+            "
+        >
+
+    {% endif %}
+
+    <h1 class="text-xl font-bold text-gray-800">
+
+        {% if configuracao_global and configuracao_global.nome_centro %}
+
+            {{ configuracao_global.nome_centro }}
+
+        {% else %}
+
+            Centro de Estudos
+
+        {% endif %}
+
+    </h1>
+
+    <p class="text-sm text-gray-500 mt-2">
+        Sistema de Gestão Pedagógica
+    </p>
+
+</div>
+
+            <nav class="p-4 space-y-2">
+
+                <a href="/"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-house text-lg w-6"></i>
+                    <span class="font-medium text-base">Dashboard</span>
+
+                </a>
+
+                <a href="/alunos"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-graduation-cap text-lg w-6"></i>
+                    <span class="font-medium text-base">Alunos</span>
+
+                </a>
+
+                <a href="/frequencias"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-clock text-lg w-6"></i>
+                    <span class="font-medium text-base">Frequências</span>
+
+                </a>
+
+                <a href="/notas"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-file-lines text-lg w-6"></i>
+                    <span class="font-medium text-base">Notas</span>
+
+                </a>
+
+                <a href="/calendario"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-calendar-days text-lg w-6"></i>
+                    <span class="font-medium text-base">Calendário</span>
+
+                </a>
+
+                {% if session.perfil == "administrador_geral" %}
+
+                <a href="/admins"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-users text-lg w-6"></i>
+                    <span class="font-medium text-base">Utilizadores</span>
+
+                </a>
+
+                <a href="/configuracoes"
+                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+
+                    <i class="fa-solid fa-gear text-lg w-6"></i>
+                    <span class="font-medium text-base">Configurações</span>
+
+                </a>
+
+                {% endif %}
+
+            </nav>
+
+        </div>
+
+        <div class="p-4 border-t border-gray-200">
+
+            <a href="{{ url_for('logout') }}"
+               class="flex items-center gap-4 px-4 py-3 rounded-2xl text-red-600 hover:bg-red-50 transition-all">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                <span class="font-medium">
+                    Terminar Sessão
+                </span>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+        <header class="px-8 py-6">
+
+            <div class="bg-white rounded-3xl shadow-lg p-6 border border-gray-200">
+
+                <h2 class="text-3xl font-bold text-gray-800">
+                    Olá, {{ session.get('nome', 'Administrador') }}
+                </h2>
+
+                <p class="text-gray-500 mt-2">
+                    Bem-vinda ao painel de gestão do Centro de Estudos
+                </p>
+
+            </div>
+
+        </header>
+
+        <main class="flex-1 overflow-y-auto px-8 pb-8">
+
+            {% block conteudo %}
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+</body>
+</html>

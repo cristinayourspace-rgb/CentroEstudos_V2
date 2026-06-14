@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Testes
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>Novo Teste</h2>
+
+    <form method="POST">
+
+        <p>Aluno</p>
+
+        <select name="aluno_id" required>
+
+            {% for aluno in alunos %}
+
+            <option value="{{ aluno.id }}">
+                {{ aluno.nome }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+        <p>Disciplina</p>
+
+        <input
+            type="text"
+            name="disciplina"
+            required
+        >
+
+        <p>Data</p>
+
+        <input
+            type="date"
+            name="data_teste"
+            required
+        >
+
+        <p>Matriz</p>
+
+        <textarea
+            name="matriz"
+            rows="4"
+        ></textarea>
+
+        <p>Observações</p>
+
+        <textarea
+            name="observacoes"
+            rows="4"
+        ></textarea>
+
+        <button type="submit">
+            Guardar
+        </button>
+
+    </form>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h2>Próximos Testes</h2>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Aluno</th>
+                <th>Disciplina</th>
+                <th>Data</th>
+                <th>Matriz</th>
+                <th>Observações</th>
+                <th>Ações</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for teste in testes %}
+
+            <tr>
+
+                <td>{{ teste.aluno.nome }}</td>
+
+                <td>{{ teste.disciplina }}</td>
+
+                <td>{{ teste.data_teste }}</td>
+
+                <td>{{ teste.matriz }}</td>
+
+                <td>{{ teste.observacoes }}</td>
+
+                <td>
+
+                    <a href="/testes/editar/{{ teste.id }}">
+                        Editar
+                    </a>
+
+                    |
+
+                    <a
+                        href="/testes/apagar/{{ teste.id }}"
+                        onclick="return confirm('Apagar este teste?')"
+                    >
+                        Apagar
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

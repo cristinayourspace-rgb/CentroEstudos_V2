@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block titulo %}Centro Estudos V2{% endblock %}
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body{
+            background:#f8fafc;
+            font-family:'Inter',sans-serif;
+        }
+
+        .gradient-menu{
+            background:linear-gradient(
+                135deg,
+                #7c3aed 0%,
+                #4f46e5 100%
+            );
+        }
+
+        .active-link{
+            background:linear-gradient(
+                90deg,
+                #06b6d4 0%,
+                #3b82f6 100%
+            );
+        }
+    .card{
+    background:white;
+    border-radius:16px;
+    padding:24px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+}
+
+.card h2{
+    font-size:24px;
+    font-weight:700;
+    margin-bottom:16px;
+}
+
+.card h3{
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:10px;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    margin-bottom:12px;
+    background:white;
+}
+
+button{
+    background:#4f46e5;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th{
+    text-align:left;
+    background:#f3f4f6;
+    padding:12px;
+}
+
+td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+a{
+    text-decoration:none;
+}
+
+hr{
+    margin:24px 0;
+    border:none;
+    border-top:1px solid #e5e7eb;
+}
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+    <div class="w-64 gradient-menu text-white flex flex-col justify-between p-6 rounded-r-3xl my-3 ml-3 shadow-xl">
+
+        <div>
+
+            <div class="flex flex-col items-center mb-8 border-b border-purple-400/30 pb-4">
+
+                <h1 class="text-md font-bold text-center tracking-wide">
+                    Centro de Estudos
+                    <br>
+                    Your Space
+                </h1>
+
+            </div>
+
+            <nav class="space-y-2">
+
+                <a href="/"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="/alunos"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Alunos</span>
+                </a>
+
+                <a href="/frequencias"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Frequências</span>
+                </a>
+
+                <a href="/notas"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>Notas</span>
+                </a>
+
+                <a href="/calendario"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Calendário</span>
+                </a>
+
+                {% if session.perfil == "administrador_geral" %}
+
+                <a href="/admins"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Utilizadores</span>
+                </a>
+
+                <a href="/configuracoes"
+                   class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-all text-sm">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configurações</span>
+                </a>
+
+                {% endif %}
+
+            </nav>
+
+        </div>
+
+        <div class="border-t border-purple-400/30 pt-4">
+
+            <a href="{{ url_for('logout') }}"
+               class="flex items-center space-x-3 p-3 rounded-xl hover:bg-red-500/20 text-red-200 transition-all text-sm">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sair do Sistema</span>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+        <header class="flex justify-between items-center px-8 py-4">
+
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Olá, {{ session.get('nome', 'Administrador') }}!
+                </h2>
+
+                <p class="text-sm text-gray-500">
+                    Bem-vinda ao Centro de Estudos
+                </p>
+            </div>
+
+        </header>
+
+        <main class="flex-1 overflow-y-auto px-8 pb-8">
+
+            {% block conteudo %}
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Editar Turma
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="card">
+
+    <h2>Editar Turma</h2>
+
+    <form method="POST">
+
+        <label>Nome da Turma</label>
+
+        <input
+            type="text"
+            name="nome"
+            value="{{ turma.nome }}"
+            required
+        >
+
+        <label>Ano Escolar</label>
+
+        <input
+            type="text"
+            name="ano_escolar"
+            value="{{ turma.ano_escolar }}"
+        >
+
+        <label>Observações</label>
+
+        <textarea
+            name="observacoes"
+            rows="4"
+        >{{ turma.observacoes or '' }}</textarea>
+
+        <button type="submit">
+            Guardar Alterações
+        </button>
+
+        <a
+            href="{{ url_for('turma.turmas') }}"
+            style="margin-left:10px;text-decoration:none;"
+        >
+            Cancelar
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

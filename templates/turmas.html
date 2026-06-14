@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Turmas
+{% endblock %}
+
+{% block conteudo %}
+
+<h2>Turmas e Alunos</h2>
+
+<br>
+
+{% for escola, turmas in agrupados.items() %}
+
+<div class="card">
+
+    <h2>{{ escola }}</h2>
+
+    <br>
+
+    {% for turma, alunos in turmas.items() %}
+
+        <h3>{{ turma }}</h3>
+
+        <br>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Código</th>
+                    <th>Aluno</th>
+                    <th>Ano Escolar</th>
+                    <th>Encarregado</th>
+                    <th>Telefone</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for aluno in alunos %}
+
+                <tr>
+
+                    <td>{{ aluno.codigo }}</td>
+
+                    <td>
+
+                        <a href="/alunos/ver/{{ aluno.id }}">
+                            {{ aluno.nome }}
+                        </a>
+
+                    </td>
+
+                    <td>{{ aluno.ano_escolar }}</td>
+
+                    <td>{{ aluno.encarregado }}</td>
+
+                    <td>{{ aluno.telefone }}</td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <br>
+
+    {% endfor %}
+
+</div>
+
+<br>
+
+{% endfor %}
+
+{% endblock %}
