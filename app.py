@@ -272,7 +272,7 @@ if __name__ == "__main__":
         print(rota)
 
     app.run(
-        debug=True
+        debug=False
     )
 
 
