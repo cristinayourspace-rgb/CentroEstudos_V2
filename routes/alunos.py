@@ -26,10 +26,9 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-
-import matplotlib
-matplotlib.use("Agg")
-from matplotlib.figure import Figure
+from reportlab.lib import colors
+from reportlab.graphics.shapes import Drawing, PolyLine, Circle, String, Line, Rect
+from reportlab.graphics import renderPDF
 
 import qrcode
 import os
@@ -103,6 +102,145 @@ def preparar_dados_grafico(notas):
         disciplinas[nota.disciplina][dt_str] = nota.nota
 
     return labels_grafico, disciplinas
+
+
+def desenhar_grafico_reportlab(labels, disciplinas_dict, largura=500, altura=200):
+    """
+    Desenha um gráfico de linhas usando apenas reportlab.
+    Devolve um objeto Drawing pronto a inserir no PDF.
+    """
+
+    margem_esq = 50
+    margem_dir = 20
+    margem_topo = 20
+    margem_base = 40
+
+    area_w = largura - margem_esq - margem_dir
+    area_h = altura - margem_topo - margem_base
+
+    drawing = Drawing(largura, altura)
+
+    # Fundo branco
+    drawing.add(Rect(0, 0, largura, altura, fillColor=colors.white, strokeColor=colors.white))
+
+    # Determinar min/max das notas
+    todos_valores = [
+        v
+        for d in disciplinas_dict.values()
+        for v in d.values()
+        if v is not None
+    ]
+
+    if not todos_valores:
+        return drawing
+
+    nota_min = max(0, min(todos_valores) - 1)
+    nota_max = min(20, max(todos_valores) + 1)
+    intervalo = nota_max - nota_min if nota_max != nota_min else 1
+
+    n_labels = len(labels)
+    if n_labels < 2:
+        x_step = area_w
+    else:
+        x_step = area_w / (n_labels - 1)
+
+    def x_para(i):
+        return margem_esq + i * x_step
+
+    def y_para(nota):
+        return margem_base + ((nota - nota_min) / intervalo) * area_h
+
+    # Grelha horizontal
+    for grid_val in range(int(nota_min), int(nota_max) + 1, 2):
+        gy = y_para(grid_val)
+        drawing.add(Line(
+            margem_esq, gy, largura - margem_dir, gy,
+            strokeColor=colors.lightgrey, strokeWidth=0.5
+        ))
+        drawing.add(String(
+            margem_esq - 5, gy - 3, str(grid_val),
+            fontSize=7, fillColor=colors.grey,
+            textAnchor='end'
+        ))
+
+    # Eixo X — datas
+    for i, label in enumerate(labels):
+        gx = x_para(i)
+        drawing.add(Line(
+            gx, margem_base - 3, gx, margem_base,
+            strokeColor=colors.grey, strokeWidth=0.5
+        ))
+        data_curta = label[5:] if len(label) >= 7 else label  # MM-DD
+        drawing.add(String(
+            gx, margem_base - 12, data_curta,
+            fontSize=6, fillColor=colors.grey,
+            textAnchor='middle'
+        ))
+
+    # Paleta de cores para as disciplinas
+    palette = [
+        colors.HexColor("#2563eb"),
+        colors.HexColor("#dc2626"),
+        colors.HexColor("#16a34a"),
+        colors.HexColor("#d97706"),
+        colors.HexColor("#7c3aed"),
+        colors.HexColor("#db2777"),
+    ]
+
+    legend_y = altura - 12
+
+    for idx, (nome_disciplina, valores) in enumerate(disciplinas_dict.items()):
+        cor = palette[idx % len(palette)]
+
+        serie = []
+        ultimo_valor = None
+        for data_str in labels:
+            v = valores.get(data_str)
+            if v is not None:
+                ultimo_valor = v
+            serie.append(ultimo_valor)
+
+        # Linha
+        pontos = []
+        for i, val in enumerate(serie):
+            if val is not None:
+                pontos.extend([x_para(i), y_para(val)])
+
+        if len(pontos) >= 4:
+            drawing.add(PolyLine(
+                pontos,
+                strokeColor=cor,
+                strokeWidth=1.5,
+                fillColor=None
+            ))
+
+        # Pontos (círculos)
+        for i, val in enumerate(serie):
+            if val is not None:
+                drawing.add(Circle(
+                    x_para(i), y_para(val), 3,
+                    fillColor=cor, strokeColor=colors.white, strokeWidth=1
+                ))
+
+        # Legenda
+        lx = margem_esq + idx * 100
+        drawing.add(Line(
+            lx, legend_y, lx + 15, legend_y,
+            strokeColor=cor, strokeWidth=2
+        ))
+        drawing.add(String(
+            lx + 18, legend_y - 3, nome_disciplina,
+            fontSize=7, fillColor=colors.black
+        ))
+
+    # Título
+    drawing.add(String(
+        largura / 2, altura - 8, "Evolução das Notas",
+        fontSize=9, fillColor=colors.black,
+        textAnchor='middle'
+    ))
+
+    return drawing
 
 
 # ------------------------------------------------------------------
@@ -434,47 +572,14 @@ def pdf_aluno(id):
 
         labels_grafico, disciplinas = preparar_dados_grafico(notas)
 
-        fig = Figure(figsize=(8, 4))
-        ax = fig.subplots()
-
-        for nome_disciplina, valores in disciplinas.items():
-
-            serie = []
-            ultimo_valor = None
-
-            for data_str in labels_grafico:
-                valor = valores.get(data_str)
-                if valor is not None:
-                    ultimo_valor = valor
-                serie.append(ultimo_valor)
-
-            ax.plot(labels_grafico, serie, marker="o", label=nome_disciplina)
-
-        ax.set_title("Evolução das Notas")
-        ax.set_xlabel("Data")
-        ax.set_ylabel("Nota")
-        ax.grid(True)
-        ax.legend()
-        fig.autofmt_xdate()
-
         if y < 260:
             nova_pagina()
 
-        grafico_buffer = BytesIO()
-        fig.savefig(grafico_buffer, format="png", bbox_inches="tight")
-        grafico_buffer.seek(0)
+        grafico_altura = 220
+        grafico = desenhar_grafico_reportlab(labels_grafico, disciplinas, largura=500, altura=grafico_altura)
+        renderPDF.draw(grafico, pdf, 50, y - grafico_altura)
 
-        pdf.drawImage(
-            ImageReader(grafico_buffer),
-            50,
-            y - 220,
-            width=500,
-            height=220,
-        )
-
-        grafico_buffer.close()
-
-        y -= 240
+        y -= grafico_altura + 10
 
     y -= 10
 
@@ -574,7 +679,6 @@ def pdf_aluno(id):
         for freq in aluno.frequencias:
 
             data_str = str(freq.data or "")
-
             entrada = str(freq.hora_entrada or "")
             saida = str(freq.hora_saida or "")
 
@@ -582,29 +686,18 @@ def pdf_aluno(id):
                 freq.duracao_horas or 0
             )
 
-            disciplinas_freq = str(
-                freq.disciplinas or ""
-            )
-
-            observacoes = str(
-                freq.observacoes or ""
-            )
+            disciplinas_freq = str(freq.disciplinas or "")
+            observacoes = str(freq.observacoes or "")
 
             escrever(
                 f"{data_str} | {entrada} | {saida} | {hhmm}"
             )
 
             if disciplinas_freq:
-                escrever(
-                    f"Disciplinas: {disciplinas_freq}",
-                    12
-                )
+                escrever(f"Disciplinas: {disciplinas_freq}", 12)
 
             if observacoes:
-                escrever(
-                    f"Obs: {observacoes}",
-                    12
-                )
+                escrever(f"Obs: {observacoes}", 12)
 
             y -= 4
 
