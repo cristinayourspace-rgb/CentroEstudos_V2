@@ -134,8 +134,8 @@ def desenhar_grafico_reportlab(labels, disciplinas_dict, largura=500, altura=200
     if not todos_valores:
         return drawing
 
-    nota_min = max(0, min(todos_valores) - 1)
-    nota_max = min(20, max(todos_valores) + 1)
+    nota_min = max(0, min(todos_valores) - 2)
+    nota_max = min(100, max(todos_valores) + 2)
     intervalo = nota_max - nota_min if nota_max != nota_min else 1
 
     n_labels = len(labels)
@@ -151,7 +151,8 @@ def desenhar_grafico_reportlab(labels, disciplinas_dict, largura=500, altura=200
         return margem_base + ((nota - nota_min) / intervalo) * area_h
 
     # Grelha horizontal
-    for grid_val in range(int(nota_min), int(nota_max) + 1, 2):
+    passo_grelha = max(1, int((nota_max - nota_min) / 5))
+    for grid_val in range(int(nota_min), int(nota_max) + 1, passo_grelha):
         gy = y_para(grid_val)
         drawing.add(Line(
             margem_esq, gy, largura - margem_dir, gy,
