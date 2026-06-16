@@ -29,7 +29,7 @@ from reportlab.lib.utils import ImageReader
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 import qrcode
 import os
@@ -77,15 +77,6 @@ def preparar_dados_grafico(notas):
         notas,
         key=lambda n: n.data_avaliacao
     )
-    """
-    Devolve (labels_grafico, disciplinas) prontos para desenhar o gráfico.
-
-    labels_grafico  – lista ordenada de datas únicas (strings "YYYY-MM-DD")
-    disciplinas     – dict  { nome_disciplina: { data_str: nota } }
-
-    Utilizada tanto em ver_aluno() como em pdf_aluno() para garantir
-    que o gráfico é sempre igual nos dois contextos.
-    """
 
     labels_grafico = sorted(
         {
@@ -340,6 +331,7 @@ def pdf_aluno(id):
         )
         for disciplina, dados in medias_dict.items()
     ]
+
     # ------------------------------------------------------------------
     # Canvas
     # ------------------------------------------------------------------
@@ -442,7 +434,8 @@ def pdf_aluno(id):
 
         labels_grafico, disciplinas = preparar_dados_grafico(notas)
 
-        plt.figure(figsize=(8, 4))
+        fig = Figure(figsize=(8, 4))
+        ax = fig.subplots()
 
         for nome_disciplina, valores in disciplinas.items():
 
@@ -455,20 +448,20 @@ def pdf_aluno(id):
                     ultimo_valor = valor
                 serie.append(ultimo_valor)
 
-            plt.plot(labels_grafico, serie, marker="o", label=nome_disciplina)
+            ax.plot(labels_grafico, serie, marker="o", label=nome_disciplina)
 
-        plt.title("Evolução das Notas")
-        plt.xlabel("Data")
-        plt.ylabel("Nota")
-        plt.grid(True)
-        plt.legend()
+        ax.set_title("Evolução das Notas")
+        ax.set_xlabel("Data")
+        ax.set_ylabel("Nota")
+        ax.grid(True)
+        ax.legend()
+        fig.autofmt_xdate()
 
         if y < 260:
             nova_pagina()
 
         grafico_buffer = BytesIO()
-        plt.savefig(grafico_buffer, format="png", bbox_inches="tight")
-        plt.close()
+        fig.savefig(grafico_buffer, format="png", bbox_inches="tight")
         grafico_buffer.seek(0)
 
         pdf.drawImage(
@@ -589,7 +582,7 @@ def pdf_aluno(id):
                 freq.duracao_horas or 0
             )
 
-            disciplinas = str(
+            disciplinas_freq = str(
                 freq.disciplinas or ""
             )
 
@@ -601,9 +594,9 @@ def pdf_aluno(id):
                 f"{data_str} | {entrada} | {saida} | {hhmm}"
             )
 
-            if disciplinas:
+            if disciplinas_freq:
                 escrever(
-                    f"Disciplinas: {disciplinas}",
+                    f"Disciplinas: {disciplinas_freq}",
                     12
                 )
 
