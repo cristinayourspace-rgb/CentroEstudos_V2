@@ -248,7 +248,7 @@ def desenhar_grafico_reportlab(labels, disciplinas_dict, largura=500, altura=200
 # ROTAS
 # ------------------------------------------------------------------
 
-@alunos_bp.route("/alunos")
+@alunos_bp.route("/alunos", methods=["GET", "POST"])
 def listar_alunos():
 
     alunos = Aluno.query.order_by(
@@ -262,7 +262,99 @@ def listar_alunos():
     objetivos = Objetivo.query.order_by(
         Objetivo.nome.asc()
     ).all()
+    
+    if request.method == "POST":
 
+        aluno = Aluno()
+
+        aluno.codigo = gerar_codigo()
+
+        aluno.nome = request.form.get(
+            "nome",
+            ""
+        ).strip()
+
+        aluno.data_nascimento = request.form.get(
+            "data_nascimento",
+            ""
+        ).strip()
+
+        aluno.escola = request.form.get(
+        "escola",
+            ""
+        ).strip()
+
+        aluno.turma = request.form.get(
+            "turma",
+            ""
+        ).strip()
+
+        aluno.encarregado = request.form.get(
+            "encarregado",
+            ""
+        ).strip()
+
+        aluno.telefone = request.form.get(
+            "telefone",
+            ""
+        ).strip()
+
+        aluno.email = request.form.get(
+            "email",
+            ""
+        ).strip()
+
+        aluno.pacote_horas = float(
+            request.form.get(
+                "pacote_horas",
+                0
+            ) or 0
+        )
+
+        aluno.horas_restantes = aluno.pacote_horas
+
+        aluno.observacoes_pedagogicas = request.form.get(
+            "observacoes_pedagogicas",
+            ""
+        ).strip()
+
+        necessidades_ids = request.form.getlist(
+            "necessidades"
+        )
+
+        objetivos_ids = request.form.getlist(
+            "objetivos"
+        )
+
+        for necessidade_id in necessidades_ids:
+
+            necessidade = Necessidade.query.get(
+                int(necessidade_id)
+            )
+
+            if necessidade:
+                aluno.necessidades.append(
+                    necessidade
+                )
+
+        for objetivo_id in objetivos_ids:
+
+            objetivo = Objetivo.query.get(
+                int(objetivo_id)
+            )
+
+            if objetivo:
+                aluno.objetivos.append(
+                    objetivo
+                )
+
+        db.session.add(aluno)
+        db.session.commit()
+
+        return redirect(
+            f"/alunos/ver/{aluno.id}"
+        )
+    
     alunos_agrupados = {}
 
     for aluno in alunos:
