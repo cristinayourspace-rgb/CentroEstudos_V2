@@ -1,0 +1,895 @@
+from flask import(
+    Blueprint, 
+    render_template, 
+    request, 
+    redirect, 
+    session,
+    send_file
+)
+
+from models import db
+from models.aluno import (
+    Aluno,
+    aluno_necessidades,
+    aluno_objetivos
+)
+from models.frequencia import Frequencia
+from models.necessidade import Necessidade
+from models.objetivo import Objetivo
+from models.nota import Nota
+from models.teste import Teste
+
+from models.configuracao_centro import ConfiguracaoCentro
+
+from io import BytesIO
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+import qrcode
+import os
+from datetime import date
+
+
+alunos_bp = Blueprint(
+    "alunos",
+    __name__
+)
+
+
+def gerar_codigo():
+
+    ultimo = Aluno.query.order_by(
+        Aluno.id.desc()
+    ).first()
+
+    if not ultimo:
+        return "10001"
+
+    return str(
+        int(ultimo.codigo) + 1
+    )
+
+
+def horas_para_hhmm(valor):
+
+    total_minutos = int(
+        round(
+            valor * 60
+        )
+    )
+
+    horas = total_minutos // 60
+    minutos = total_minutos % 60
+
+    return f"{horas:02d}:{minutos:02d}"
+
+
+def texto_normalizado(valor):
+
+    return str(
+        valor or ""
+    ).strip().lower()
+
+@alunos_bp.route("/alunos/pdf/<int:id>")
+def pdf_aluno(id):
+
+    aluno = Aluno.query.get_or_404(id)
+
+    configuracao = ConfiguracaoCentro.query.first()
+
+    notas = Nota.query.filter_by(
+        aluno_id=aluno.id
+    ).order_by(
+        Nota.data_avaliacao.asc()
+    ).all()
+
+    hoje = date.today().strftime("%Y-%m-%d")
+
+    proximos_testes = Teste.query.filter(
+        Teste.data_teste >= hoje
+    ).order_by(
+        Teste.data_teste.asc()
+    ).all()
+
+    total_horas = sum(
+        (f.duracao_horas or 0)
+        for f in aluno.frequencias
+    )
+
+    medias_dict = {}
+
+    for nota in notas:
+
+        if nota.disciplina not in medias_dict:
+
+            medias_dict[nota.disciplina] = {
+                "soma": 0,
+                "quantidade": 0
+            }
+
+        medias_dict[nota.disciplina]["soma"] += nota.nota
+        medias_dict[nota.disciplina]["quantidade"] += 1
+
+    medias = []
+
+    for disciplina, dados in medias_dict.items():
+
+        medias.append(
+            (
+                disciplina,
+                round(
+                    dados["soma"] /
+                    dados["quantidade"],
+                    2
+                )
+            )
+        )
+
+    buffer = BytesIO()
+
+    pdf = canvas.Canvas(
+        buffer,
+        pagesize=A4
+    )
+
+    largura, altura = A4
+
+    pagina = 1
+
+    def nova_pagina():
+
+        nonlocal y
+        nonlocal pagina
+
+        pdf.setFont(
+            "Helvetica",
+            9
+        )
+
+        pdf.drawRightString(
+            largura - 40,
+            20,
+            f"Página {pagina}"
+        )
+
+        pdf.showPage()
+
+        pagina += 1
+        y = altura - 50
+
+    def escrever(texto, espacamento=16):
+
+        nonlocal y
+
+        if y < 60:
+            nova_pagina()
+
+        pdf.drawString(
+            50,
+            y,
+            str(texto)
+        )
+
+        y -= espacamento
+
+    y = altura - 50
+
+    # =================================
+    # CABEÇALHO
+    # =================================
+
+    if (
+        configuracao
+        and configuracao.logo
+    ):
+
+        caminho_logo = os.path.join(
+            "static",
+            "logos",
+            configuracao.logo
+        )
+
+        if os.path.exists(caminho_logo):
+
+            try:
+
+                pdf.drawImage(
+                    caminho_logo,
+                    50,
+                    altura - 100,
+                    width=80,
+                    height=80,
+                    preserveAspectRatio=True
+                )
+
+            except Exception:
+                pass
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        18
+    )
+
+    pdf.drawString(
+        150,
+        altura - 60,
+        configuracao.nome_centro
+        if configuracao
+        else "Centro de Estudos"
+    )
+
+    y = altura - 130
+
+    # =================================
+    # DADOS DO ALUNO
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("DADOS DO ALUNO")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    escrever(f"Código: {aluno.codigo}")
+    escrever(f"Nome: {aluno.nome}")
+    escrever(f"Escola: {aluno.escola}")
+    escrever(f"Ano Escolar: {aluno.ano_escolar}")
+    escrever(f"Turma: {aluno.turma}")
+
+    y -= 10
+
+    # =================================
+    # CONTACTOS
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("CONTACTOS")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    escrever(f"Encarregado: {aluno.encarregado}")
+    escrever(f"Telefone: {aluno.telefone}")
+    escrever(f"Email: {aluno.email}")
+
+    y -= 10
+
+    # =================================
+    # HORAS
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("GESTÃO DE HORAS")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    escrever(
+        f"Pacote: {aluno.pacote_horas} h"
+    )
+
+    escrever(
+        f"Horas Restantes: {horas_para_hhmm(aluno.horas_restantes)}"
+    )
+
+    escrever(
+        f"Total Estudado: {horas_para_hhmm(total_horas)}"
+    )
+
+    y -= 10
+
+    # =================================
+    # MÉDIAS
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("MÉDIAS POR DISCIPLINA")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    for disciplina, media in medias:
+
+        escrever(
+            f"{disciplina}: {media}"
+        )
+
+    y -= 10
+
+    # =================================
+    # NOTAS
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("HISTÓRICO DE NOTAS")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    for nota in notas:
+
+        escrever(
+            f"{nota.data_avaliacao} | "
+            f"{nota.disciplina} | "
+            f"{nota.nota}"
+        )
+
+    y -= 10
+
+    # =================================
+    # TESTES
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever("PRÓXIMOS TESTES")
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    for teste in proximos_testes:
+
+        escrever(
+            f"{teste.data_teste} | "
+            f"{teste.disciplina}"
+        )
+
+    y -= 10
+
+    # =================================
+    # FREQUÊNCIAS
+    # =================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    escrever(
+        "HISTÓRICO DE FREQUÊNCIAS"
+    )
+
+    pdf.setFont(
+        "Helvetica",
+        11
+    )
+
+    for f in aluno.frequencias:
+
+        escrever(
+            f"{f.data} | "
+            f"{f.duracao_horas} h | "
+            f"{f.disciplinas}"
+        )
+
+    pdf.setFont(
+        "Helvetica",
+        9
+    )
+
+    pdf.drawRightString(
+        largura - 40,
+        20,
+        f"Página {pagina}"
+    )
+
+    pdf.save()
+
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"historico_{aluno.codigo}.pdf",
+        mimetype="application/pdf"
+    )
+@alunos_bp.route("/alunos", methods=["GET", "POST"])
+def listar_alunos():
+
+    if (
+        session.get("perfil") == "colaborador"
+        and request.method == "POST"
+    ):
+        return render_template(
+            "acesso_negado.html"
+        )
+
+    if request.method == "POST":
+
+        codigo = gerar_codigo()
+
+        os.makedirs(
+            "static/qrcodes",
+            exist_ok=True
+        )
+
+        caminho_qr = f"static/qrcodes/{codigo}.png"
+
+        qr = qrcode.make(codigo)
+
+        qr.save(caminho_qr)
+
+        pacote = float(
+            request.form.get(
+                "pacote_horas",
+                0
+            ) or 0
+        )
+
+        aluno = Aluno(
+            codigo=codigo,
+            nome=request.form["nome"],
+            data_nascimento=request.form["data_nascimento"],
+            escola=request.form["escola"],
+            turma=request.form["turma"],
+            encarregado=request.form["encarregado"],
+            telefone=request.form["telefone"],
+            email=request.form["email"],
+            pacote_horas=pacote,
+            horas_restantes=pacote,
+            observacoes_pedagogicas=request.form.get(
+                "observacoes_pedagogicas",
+                ""
+            )
+        )
+
+        necessidades_ids = request.form.getlist(
+            "necessidades"
+        )
+
+        objetivos_ids = request.form.getlist(
+            "objetivos"
+        )
+
+        if necessidades_ids:
+
+            aluno.necessidades = (
+                Necessidade.query.filter(
+                    Necessidade.id.in_(
+                        necessidades_ids
+                    )
+                ).all()
+            )
+
+        if objetivos_ids:
+
+            aluno.objetivos = (
+                Objetivo.query.filter(
+                    Objetivo.id.in_(
+                        objetivos_ids
+                    )
+                ).all()
+            )
+
+        db.session.add(aluno)
+        db.session.commit()
+
+        return redirect("/alunos")
+
+    alunos = Aluno.query.all()
+
+    alunos = sorted(
+        alunos,
+        key=lambda aluno: (
+            texto_normalizado(aluno.escola) or "sem escola",
+            texto_normalizado(aluno.turma) or "sem turma",
+            texto_normalizado(aluno.nome).split(" ")[0],
+            texto_normalizado(aluno.nome)
+        )
+    )
+
+    alunos_agrupados = {}
+
+    for aluno in alunos:
+
+        escola = (
+            aluno.escola.strip()
+            if aluno.escola and aluno.escola.strip()
+            else "Sem Escola"
+        )
+
+        turma = (
+            aluno.turma.strip()
+            if aluno.turma and aluno.turma.strip()
+            else "Sem Turma"
+        )
+
+        if escola not in alunos_agrupados:
+            alunos_agrupados[escola] = {}
+
+        if turma not in alunos_agrupados[escola]:
+            alunos_agrupados[escola][turma] = []
+
+        alunos_agrupados[escola][turma].append(
+            aluno
+        )
+
+    necessidades = Necessidade.query.order_by(
+        Necessidade.nome
+    ).all()
+
+    objetivos = Objetivo.query.order_by(
+        Objetivo.nome
+    ).all()
+
+    return render_template(
+        "alunos.html",
+        alunos=alunos,
+        alunos_agrupados=alunos_agrupados,
+        necessidades=necessidades,
+        objetivos=objetivos
+    )
+
+
+@alunos_bp.route("/alunos/ver/<int:id>")
+def ver_aluno(id):
+
+    aluno = Aluno.query.get_or_404(id)
+
+    total_horas = 0
+
+    for f in aluno.frequencias:
+
+        total_horas += (
+            f.duracao_horas or 0
+        )
+
+        f.duracao_formatada = horas_para_hhmm(
+            f.duracao_horas or 0
+        )
+
+    notas = Nota.query.filter_by(
+        aluno_id=aluno.id
+    ).order_by(
+        Nota.data_avaliacao.asc()
+    ).all()
+
+    hoje = date.today().strftime(
+        "%Y-%m-%d"
+    )
+
+    escola_aluno = texto_normalizado(
+        aluno.escola
+    )
+
+    turma_aluno = texto_normalizado(
+        aluno.turma
+    )
+
+    testes_futuros = Teste.query.filter(
+        Teste.data_teste >= hoje
+    ).order_by(
+        Teste.data_teste.asc()
+    ).all()
+
+    proximos_testes = []
+
+    for teste in testes_futuros:
+
+        teste_escola = texto_normalizado(
+            teste.escola
+        )
+
+        teste_turma = texto_normalizado(
+            teste.turma
+        )
+
+        mesma_turma = (
+            escola_aluno
+            and turma_aluno
+            and teste_escola == escola_aluno
+            and teste_turma == turma_aluno
+        )
+
+        teste_antigo_do_aluno = (
+            teste.aluno_id == aluno.id
+        )
+
+        if (
+            mesma_turma
+            or teste_antigo_do_aluno
+        ):
+
+            proximos_testes.append(
+                teste
+            )
+
+    medias_dict = {}
+
+    for nota in notas:
+
+        disciplina = nota.disciplina
+
+        if disciplina not in medias_dict:
+
+            medias_dict[disciplina] = {
+                "soma": 0,
+                "quantidade": 0
+            }
+
+        medias_dict[disciplina]["soma"] += nota.nota
+        medias_dict[disciplina]["quantidade"] += 1
+
+    medias = []
+
+    for disciplina, dados in medias_dict.items():
+
+        media = round(
+            dados["soma"] / dados["quantidade"],
+            2
+        )
+
+        medias.append(
+            {
+                "disciplina": disciplina,
+                "media": media
+            }
+        )
+
+    labels_grafico = sorted(
+        list(
+            set(
+                nota.data_avaliacao
+                for nota in notas
+            )
+        )
+    )
+
+    cores = [
+        "#2563eb",
+        "#16a34a",
+        "#dc2626",
+        "#ca8a04",
+        "#9333ea",
+        "#0891b2",
+        "#ea580c",
+        "#be123c",
+        "#4f46e5",
+        "#15803d"
+    ]
+
+    disciplinas = {}
+
+    for nota in notas:
+
+        if nota.disciplina not in disciplinas:
+
+            disciplinas[nota.disciplina] = {}
+
+        disciplinas[nota.disciplina][
+            nota.data_avaliacao
+        ] = nota.nota
+
+    datasets_grafico = []
+
+    for indice, disciplina in enumerate(
+        disciplinas.keys()
+    ):
+
+        serie = []
+
+        for data in labels_grafico:
+
+            serie.append(
+                disciplinas[disciplina].get(
+                    data,
+                    None
+                )
+            )
+
+        datasets_grafico.append(
+            {
+                "label": disciplina,
+                "data": serie,
+                "borderColor": cores[
+                    indice % len(cores)
+                ],
+                "backgroundColor": cores[
+                    indice % len(cores)
+                ],
+                "tension": 0.3,
+                "spanGaps": True
+            }
+        )
+
+    print("\nLABELS:")
+    print(labels_grafico)
+
+    print("\nDATASETS:")
+    print(datasets_grafico)
+
+    return render_template(
+        "ver_aluno.html",
+        aluno=aluno,
+        notas=notas,
+        medias=medias,
+        labels_grafico=labels_grafico,
+        datasets_grafico=datasets_grafico,
+        proximos_testes=proximos_testes,
+        total_horas=horas_para_hhmm(
+            total_horas
+        ),
+        saldo_horas=horas_para_hhmm(
+            aluno.horas_restantes
+        )
+    )
+
+
+@alunos_bp.route(
+    "/alunos/editar/<int:id>",
+    methods=["GET", "POST"]
+)
+def editar_aluno(id):
+
+    if session.get("perfil") == "colaborador":
+
+        return render_template(
+            "acesso_negado.html"
+        )
+
+    aluno = Aluno.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        aluno.nome = request.form["nome"]
+        aluno.data_nascimento = request.form["data_nascimento"]
+        aluno.escola = request.form["escola"]
+        aluno.turma = request.form["turma"]
+        aluno.encarregado = request.form["encarregado"]
+        aluno.telefone = request.form["telefone"]
+        aluno.email = request.form["email"]
+
+        aluno.pacote_horas = float(
+            request.form.get(
+                "pacote_horas",
+                0
+            ) or 0
+        )
+
+        aluno.observacoes_pedagogicas = (
+            request.form.get(
+                "observacoes_pedagogicas",
+                ""
+            )
+        )
+
+        necessidades_ids = request.form.getlist(
+            "necessidades"
+        )
+
+        objetivos_ids = request.form.getlist(
+            "objetivos"
+        )
+
+        aluno.necessidades = (
+            Necessidade.query.filter(
+                Necessidade.id.in_(
+                    necessidades_ids
+                )
+            ).all()
+        )
+
+        aluno.objetivos = (
+            Objetivo.query.filter(
+                Objetivo.id.in_(
+                    objetivos_ids
+                )
+            ).all()
+        )
+
+        db.session.commit()
+
+        return redirect("/alunos")
+
+    necessidades = Necessidade.query.order_by(
+        Necessidade.nome
+    ).all()
+
+    objetivos = Objetivo.query.order_by(
+        Objetivo.nome
+    ).all()
+
+    return render_template(
+        "editar_aluno.html",
+        aluno=aluno,
+        necessidades=necessidades,
+        objetivos=objetivos
+    )
+
+
+@alunos_bp.route("/alunos/apagar/<int:id>")
+def apagar_aluno(id):
+
+    if session.get("perfil") == "colaborador":
+
+        return render_template(
+            "acesso_negado.html"
+        )
+
+    aluno = Aluno.query.get_or_404(id)
+
+    try:
+
+        db.session.execute(
+            aluno_necessidades.delete().where(
+                aluno_necessidades.c.aluno_id == id
+            )
+        )
+
+        db.session.execute(
+            aluno_objetivos.delete().where(
+                aluno_objetivos.c.aluno_id == id
+            )
+        )
+
+        Frequencia.query.filter_by(
+            aluno_id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        Nota.query.filter_by(
+            aluno_id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        Teste.query.filter_by(
+            aluno_id=id
+        ).update(
+            {
+                Teste.aluno_id: None
+            },
+            synchronize_session=False
+        )
+
+        Aluno.query.filter_by(
+            id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+        raise
+
+    return redirect("/alunos")
