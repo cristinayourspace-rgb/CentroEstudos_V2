@@ -6,6 +6,22 @@ Utilizadores
 
 {% block conteudo %}
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+
+    {% for message in messages %}
+
+        <div class="alerta-sucesso">
+            {{ message }}
+        </div>
+
+        <br>
+
+    {% endfor %}
+
+{% endif %}
+{% endwith %}
+
 <div class="card">
 
     <h2>Utilizadores</h2>
