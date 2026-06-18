@@ -43,6 +43,53 @@ def extensao_permitida(nome_ficheiro):
         in EXTENSOES_LOGO_PERMITIDAS
     )
 
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    session
+)
+
+from werkzeug.utils import secure_filename
+
+from uuid import uuid4
+
+from models import db
+from models.configuracao_centro import ConfiguracaoCentro
+
+import cloudinary.uploader
+
+from utils.cloudinary_config import *
+
+
+configuracoes_bp = Blueprint(
+    "configuracoes",
+    __name__,
+    url_prefix="/configuracoes"
+)
+
+
+EXTENSOES_LOGO_PERMITIDAS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "webp"
+}
+
+
+def extensao_permitida(nome_ficheiro):
+
+    return (
+        "."
+        in nome_ficheiro
+        and nome_ficheiro.rsplit(
+            ".",
+            1
+        )[1].lower()
+        in EXTENSOES_LOGO_PERMITIDAS
+    )
+
 
 @configuracoes_bp.route(
     "",
@@ -104,7 +151,9 @@ def configuracoes():
         if (
             ficheiro_logo
             and ficheiro_logo.filename
-            and extensao_permitida(ficheiro_logo.filename)
+            and extensao_permitida(
+                ficheiro_logo.filename
+            )
         ):
 
             nome_original = secure_filename(
@@ -116,29 +165,24 @@ def configuracoes():
                 1
             )[1].lower()
 
-            nome_ficheiro = f"logo_{uuid4().hex}.{extensao}"
-
-            pasta_logos = os.path.join(
-                current_app.root_path,
-                "static",
-                "logos"
+            public_id = (
+                f"centros/default/logos/"
+                f"logo_{uuid4().hex}"
             )
 
-            os.makedirs(
-                pasta_logos,
-                exist_ok=True
+            resultado = (
+                cloudinary.uploader.upload(
+                    ficheiro_logo,
+                    folder="centros/default/logos",
+                    public_id=f"logo_{uuid4().hex}",
+                    overwrite=True,
+                    resource_type="image"
+                )
             )
 
-            caminho = os.path.join(
-                pasta_logos,
-                nome_ficheiro
+            configuracao.logo = (
+                resultado["secure_url"]
             )
-
-            ficheiro_logo.save(
-                caminho
-            )
-
-            configuracao.logo = nome_ficheiro
 
         db.session.commit()
 
