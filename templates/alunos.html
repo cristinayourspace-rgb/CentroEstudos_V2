@@ -1,234 +1,368 @@
 {% extends "base.html" %}
 
-{% block titulo %}
-Alunos
-{% endblock %}
+{% block titulo %}Alunos{% endblock %}
 
 {% block conteudo %}
 
-<div class="card">
+<style>
+/* ─── BASE ─── */
+.al-card{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;margin-bottom:1.5rem;}
 
-    <h2>Alunos Registados</h2>
+/* ─── KPI ─── */
+.al-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:1.5rem;}
+.al-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:1.1rem 1rem;display:flex;flex-direction:column;align-items:center;gap:.35rem;text-align:center;}
+.al-kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;margin-bottom:.1rem;}
+.al-kpi-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;}
+.al-kpi-value{font-size:2.25rem;font-weight:800;line-height:1;}
 
-    <br>
+/* ─── HEADER ─── */
+.al-page-header{padding:1.25rem 1.25rem .875rem;}
+.al-page-title{font-size:1.5rem;font-weight:800;color:#0f172a;line-height:1.2;}
+.al-page-sub{color:#64748b;font-size:.875rem;margin-top:.25rem;}
+.al-search-wrap{margin-top:1rem;position:relative;}
+.al-search-icon{position:absolute;left:.875rem;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;}
+.al-search{width:100%;padding:.8rem 1rem .8rem 2.75rem;border:2px solid #e2e8f0;border-radius:.75rem;font-size:.9375rem;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;}
+.al-search:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
 
-    {% if alunos_agrupados %}
+/* ─── ESCOLA / TURMA ─── */
+.al-escola-block{border-top:1px solid #f1f5f9;padding:1.25rem;}
+.al-escola-title{font-size:1rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:.5rem;}
+.al-turma-box{margin-top:.875rem;border:1px solid #e2e8f0;border-radius:.75rem;overflow:hidden;}
+.al-turma-head{background:#f8fafc;padding:.75rem 1rem;font-size:.8125rem;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;}
 
+/* ─── TABELA DESKTOP ─── */
+.al-table-wrap{overflow-x:auto;}
+.al-table{width:100%;border-collapse:collapse;font-size:.875rem;}
+.al-table thead tr{background:#f8fafc;}
+.al-table th{padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;white-space:nowrap;}
+.al-table tbody tr{border-top:1px solid #f1f5f9;transition:background .12s;}
+.al-table tbody tr:hover{background:#f0f9ff;}
+.al-table td{padding:.75rem 1rem;color:#334155;vertical-align:middle;}
+.al-table td.al-code{font-family:monospace;font-size:.8rem;color:#94a3b8;}
+.al-table td.al-name{font-weight:600;color:#0f172a;white-space:nowrap;}
+.al-btn{display:inline-flex;align-items:center;gap:.3rem;padding:.45rem .75rem;border-radius:.5rem;text-decoration:none;font-size:.8rem;font-weight:600;border:none;cursor:pointer;transition:opacity .12s;}
+.al-btn:hover{opacity:.8;}
+.al-btn-view{background:#dbeafe;color:#1e40af;}
+.al-btn-edit{background:#fef9c3;color:#854d0e;}
+.al-btn-del{background:#fee2e2;color:#991b1b;}
+.al-btn-actions{display:flex;gap:.35rem;flex-wrap:wrap;}
+
+/* ─── CARTOES MOBILE ─── */
+.al-mobile-list{padding:.875rem;display:flex;flex-direction:column;gap:.75rem;}
+.al-mobile-card{border:1px solid #e2e8f0;border-radius:.875rem;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;}
+.al-mc-header{padding:.875rem 1rem;border-bottom:1px solid #f1f5f9;}
+.al-mc-name{font-weight:700;color:#0f172a;font-size:.9375rem;}
+.al-mc-code{font-family:monospace;font-size:.75rem;color:#94a3b8;margin-top:.1rem;}
+.al-mc-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.al-mc-cell{padding:.6rem 1rem;border-bottom:1px solid #f1f5f9;}
+.al-mc-cell:nth-child(odd){border-right:1px solid #f1f5f9;}
+.al-mc-cell-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:.15rem;}
+.al-mc-cell-value{font-size:.875rem;font-weight:600;color:#1e293b;}
+.al-mc-footer{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem;}
+.al-btn-full{width:100%;justify-content:center;padding:.75rem;font-size:.9rem;}
+
+/* ─── FORMULARIO ─── */
+.al-form-section{padding:0 1.25rem;}
+.al-form-section-title{font-size:.8125rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#2563eb;padding:.875rem 0 .5rem;border-top:1px solid #f1f5f9;margin-top:.5rem;}
+.al-form-section-title:first-child{border-top:none;margin-top:0;}
+.al-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:.25rem;}
+.al-label{display:block;font-size:.8125rem;font-weight:700;color:#374151;margin-bottom:.35rem;}
+.al-input{width:100%;padding:.75rem 1rem;border:2px solid #e2e8f0;border-radius:.75rem;font-size:.9375rem;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;}
+.al-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+.al-chips{display:flex;flex-wrap:wrap;gap:.625rem;margin-bottom:.25rem;}
+.al-chip{display:inline-flex;align-items:center;gap:.45rem;padding:.5rem .875rem;border:1.5px solid #cbd5e1;border-radius:9999px;background:#fff;font-size:.875rem;cursor:pointer;transition:border-color .12s,background .12s;}
+.al-chip:hover{border-color:#93c5fd;background:#eff6ff;}
+.al-chip input{accent-color:#2563eb;}
+.al-save-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:#2563eb;color:#fff;border:none;border-radius:.75rem;padding:.9rem 1.75rem;font-size:.9375rem;font-weight:700;cursor:pointer;transition:background .15s;}
+.al-save-btn:hover{background:#1d4ed8;}
+.al-empty{padding:3rem 1.5rem;text-align:center;color:#64748b;}
+.al-empty-icon{font-size:2.5rem;margin-bottom:.75rem;}
+.al-empty-title{font-size:1rem;font-weight:700;color:#475569;}
+.al-empty-sub{font-size:.875rem;margin-top:.35rem;}
+
+/* ─── RESPONSIVE ─── */
+@media(min-width:768px){
+  .al-desktop-table{display:block!important;}
+  .al-mobile-list{display:none!important;}
+  .al-save-btn{width:auto;}
+  .al-chips{flex-direction:row;}
+  .al-chip{width:auto;}
+}
+@media(max-width:767px){
+  .al-kpi-grid{grid-template-columns:1fr 1fr;}
+  .al-kpi-last{grid-column:1/-1;}
+  .al-desktop-table{display:none!important;}
+  .al-mobile-list{display:flex!important;}
+  .al-save-btn{width:100%;}
+  .al-chips{flex-direction:column;}
+  .al-chip{width:100%;}
+  .al-form-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<!-- ═══ KPI CARDS ═══ -->
+<div class="al-kpi-grid">
+
+  <div class="al-kpi">
+    <div class="al-kpi-icon" style="background:#dbeafe;">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </div>
+    <div class="al-kpi-label">Alunos</div>
+    <div class="al-kpi-value" style="color:#2563eb;">{{ alunos|length }}</div>
+  </div>
+
+  <div class="al-kpi">
+    <div class="al-kpi-icon" style="background:#dcfce7;">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+    </div>
+    <div class="al-kpi-label">Escolas</div>
+    <div class="al-kpi-value" style="color:#16a34a;">{{ alunos_agrupados|length if alunos_agrupados else 0 }}</div>
+  </div>
+
+  <div class="al-kpi al-kpi-last">
+    <div class="al-kpi-icon" style="background:#ede9fe;">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+    </div>
+    <div class="al-kpi-label">Turmas</div>
+    <div class="al-kpi-value" style="color:#7c3aed;">
+      {% set ns = namespace(t=0) %}
+      {% if alunos_agrupados %}
         {% for escola, turmas in alunos_agrupados.items() %}
-
-            <h3>{{ escola }}</h3>
-
-            <br>
-
-            {% for turma, alunos_turma in turmas.items() %}
-
-                <h4>Turma {{ turma }}</h4>
-
-                <br>
-
-                <div class="overflow-x-auto">
-
-                    <table class="min-w-full">
-
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nome</th>
-                            <th>Encarregado</th>
-                            <th>Pacote</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                    {% for aluno in alunos_turma %}
-
-                        <tr>
-                            <td>{{ aluno.codigo }}</td>
-                            <td>{{ aluno.nome }}</td>
-                            <td>{{ aluno.encarregado }}</td>
-                            <td>{{ aluno.pacote_horas }} h</td>
-                            <td>
-                                <a href="/alunos/ver/{{ aluno.id }}">
-                                    Ver
-                                </a>
-
-                                |
-
-                                <a href="/alunos/editar/{{ aluno.id }}">
-                                    Editar
-                                </a>
-
-                                |
-
-                                <a
-                                    href="/alunos/apagar/{{ aluno.id }}"
-                                    onclick="return confirm('Tem a certeza que deseja eliminar este aluno?')"
-                                >
-                                    Apagar
-                                </a>
-                            </td>
-                        </tr>
-
-                    {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-                </div>
-
-                <br>
-
-            {% endfor %}
-
+          {% set ns.t = ns.t + turmas|length %}
         {% endfor %}
-
-    {% else %}
-
-        <p>Não existem alunos registados.</p>
-
-    {% endif %}
+      {% endif %}
+      {{ ns.t }}
+    </div>
+  </div>
 
 </div>
 
-<br>
+<!-- ═══ LISTA DE ALUNOS ═══ -->
+<div class="al-card">
 
-<div class="card">
+  <div class="al-page-header">
+    <div class="al-page-title">Gestao de Alunos</div>
+    <div class="al-page-sub">Registe, organize e acompanhe todos os alunos do centro.</div>
+    <div class="al-search-wrap">
+      <svg class="al-search-icon" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803a7.5 7.5 0 0010.607 10.607z"/>
+      </svg>
+      <input type="text" id="pesquisaAluno" class="al-search" placeholder="Procurar por nome, codigo ou encarregado..." autocomplete="off" />
+    </div>
+  </div>
 
-    <h2>Cadastro de Alunos</h2>
+  {% if alunos_agrupados %}
+    {% for escola, turmas in alunos_agrupados.items() %}
+    <div class="al-escola-block aluno-bloco">
+      <div class="al-escola-title">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="2" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+        {{ escola }}
+      </div>
 
-    <br>
+      {% for turma, alunos_turma in turmas.items() %}
+      <div class="al-turma-box">
+        <div class="al-turma-head">Turma {{ turma }}</div>
 
+        <!-- TABELA desktop -->
+        <div class="al-desktop-table al-table-wrap" style="display:block;">
+          <table class="al-table">
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Nome</th>
+                <th>Encarregado</th>
+                <th>Pacote</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aluno in alunos_turma %}
+              <tr class="linha-aluno">
+                <td class="al-code">{{ aluno.codigo }}</td>
+                <td class="al-name nome-aluno">{{ aluno.nome }}</td>
+                <td class="encarregado-aluno">{{ aluno.encarregado }}</td>
+                <td>{{ aluno.pacote_horas }} h</td>
+                <td>
+                  <div class="al-btn-actions">
+                    <a href="/alunos/ver/{{ aluno.id }}" class="al-btn al-btn-view">
+                      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      Ver
+                    </a>
+                    <a href="/alunos/editar/{{ aluno.id }}" class="al-btn al-btn-edit">
+                      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+                      Editar
+                    </a>
+                    <form method="POST" action="/alunos/apagar/{{ aluno.id }}" style="display:inline;" onsubmit="return confirm('Tem a certeza que deseja eliminar este aluno?')">
+                      <button type="submit" class="al-btn al-btn-del">
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                        Apagar
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CARTOES mobile -->
+        <div class="al-mobile-list" style="display:none;">
+          {% for aluno in alunos_turma %}
+          <div class="al-mobile-card linha-aluno">
+            <div class="al-mc-header">
+              <div class="al-mc-name nome-aluno">{{ aluno.nome }}</div>
+              <div class="al-mc-code">{{ aluno.codigo }}</div>
+            </div>
+            <div class="al-mc-body">
+              <div class="al-mc-cell">
+                <div class="al-mc-cell-label">Encarregado</div>
+                <div class="al-mc-cell-value encarregado-aluno">{{ aluno.encarregado }}</div>
+              </div>
+              <div class="al-mc-cell">
+                <div class="al-mc-cell-label">Pacote</div>
+                <div class="al-mc-cell-value">{{ aluno.pacote_horas }} h</div>
+              </div>
+            </div>
+            <div class="al-mc-footer">
+              <a href="/alunos/ver/{{ aluno.id }}" class="al-btn al-btn-view al-btn-full">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Ver Perfil
+              </a>
+              <a href="/alunos/editar/{{ aluno.id }}" class="al-btn al-btn-edit al-btn-full">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+                Editar
+              </a>
+              <form method="POST" action="/alunos/apagar/{{ aluno.id }}" onsubmit="return confirm('Tem a certeza que deseja eliminar este aluno?')" style="width:100%;">
+                <button type="submit" class="al-btn al-btn-del al-btn-full">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                  Apagar
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+  {% else %}
+    <div class="al-empty">
+      <div class="al-empty-icon">📚</div>
+      <div class="al-empty-title">Nenhum aluno registado.</div>
+      <div class="al-empty-sub">Utilize o formulario abaixo para adicionar o primeiro aluno.</div>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- ═══ FORMULARIO NOVO ALUNO ═══ -->
+<div class="al-card">
+
+  <div class="al-page-header" style="border-bottom:1px solid #f1f5f9;">
+    <div class="al-page-title" style="font-size:1.2rem;">Novo Aluno</div>
+    <div class="al-page-sub">Preencha os dados para criar um novo registo.</div>
+  </div>
+
+  <div style="padding:1.25rem;">
     <form method="POST">
 
-        <h3>Dados Gerais</h3>
+      <div class="al-form-section-title" style="border-top:none;margin-top:0;">Dados Gerais</div>
+      <div class="al-form-grid">
+        <div>
+          <label class="al-label">Nome</label>
+          <input class="al-input" type="text" name="nome" required placeholder="Nome completo" />
+        </div>
+        <div>
+          <label class="al-label">Data de Nascimento</label>
+          <input class="al-input" type="date" name="data_nascimento" />
+        </div>
+        <div>
+          <label class="al-label">Escola</label>
+          <input class="al-input" type="text" name="escola" placeholder="Nome da escola" />
+        </div>
+        <div>
+          <label class="al-label">Turma</label>
+          <input class="al-input" type="text" name="turma" placeholder="Ex: 9A" />
+        </div>
+      </div>
 
-<br>
+      <div class="al-form-section-title">Contacto</div>
+      <div class="al-form-grid">
+        <div>
+          <label class="al-label">Encarregado de Educacao</label>
+          <input class="al-input" type="text" name="encarregado" required placeholder="Nome do encarregado" />
+        </div>
+        <div>
+          <label class="al-label">Telefone / WhatsApp</label>
+          <input class="al-input" type="text" name="telefone" required placeholder="9XX XXX XXX" />
+        </div>
+        <div>
+          <label class="al-label">Email</label>
+          <input class="al-input" type="email" name="email" placeholder="email@exemplo.com" />
+        </div>
+        <div>
+          <label class="al-label">Pacote de Horas</label>
+          <input class="al-input" type="number" step="0.5" name="pacote_horas" placeholder="Ex: 10" />
+        </div>
+      </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-    <div>
-        <p>Nome</p>
-        <input type="text" name="nome" required>
-    </div>
-
-    <div>
-        <p>Data de Nascimento</p>
-        <input type="date" name="data_nascimento">
-    </div>
-
-    <div>
-        <p>Escola</p>
-        <input type="text" name="escola">
-    </div>
-
-    <div>
-        <p>Turma</p>
-        <input
-            type="text"
-            name="turma"
-            placeholder="Ex: 7A"
-        >
-    </div>
-
-    <div>
-        <p>Encarregado de Educação</p>
-        <input type="text" name="encarregado" required>
-    </div>
-
-    <div>
-        <p>Telefone / WhatsApp</p>
-        <input type="text" name="telefone" required>
-    </div>
-
-    <div>
-        <p>Email</p>
-        <input type="email" name="email">
-    </div>
-
-    <div>
-        <p>Pacote de Horas Semanais</p>
-        <input type="number" step="0.5" name="pacote_horas">
-    </div>
-
-</div>
-
-<hr>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
-
-    <div>
-
-        <h3>Necessidades Pedagógicas</h3>
-
-        <br>
-
+      <div class="al-form-section-title">Necessidades Pedagogicas</div>
+      <div class="al-chips">
         {% for necessidade in necessidades %}
-
-            <label style="display:block;margin-bottom:10px;">
-
-                <input
-                    type="checkbox"
-                    name="necessidades"
-                    value="{{ necessidade.id }}"
-                    style="width:auto;margin-right:8px;"
-                >
-
-                {{ necessidade.nome }}
-
-            </label>
-
+        <label class="al-chip">
+          <input type="checkbox" name="necessidades" value="{{ necessidade.id }}" />
+          {{ necessidade.nome }}
+        </label>
         {% endfor %}
+      </div>
 
-    </div>
-
-    <div>
-
-        <h3>Objetivos Pedagógicos</h3>
-
-        <br>
-
+      <div class="al-form-section-title">Objetivos Pedagogicos</div>
+      <div class="al-chips">
         {% for objetivo in objetivos %}
-
-            <label style="display:block;margin-bottom:10px;">
-
-                <input
-                    type="checkbox"
-                    name="objetivos"
-                    value="{{ objetivo.id }}"
-                    style="width:auto;margin-right:8px;"
-                >
-
-                {{ objetivo.nome }}
-
-            </label>
-
+        <label class="al-chip">
+          <input type="checkbox" name="objetivos" value="{{ objetivo.id }}" />
+          {{ objetivo.nome }}
+        </label>
         {% endfor %}
+      </div>
 
-    </div>
+      <div class="al-form-section-title">Observacoes Pedagogicas</div>
+      <textarea class="al-input" name="observacoes_pedagogicas" rows="5" placeholder="Informacoes relevantes sobre o aluno..."></textarea>
 
-</div>
-
-<hr>
-
-<h3>Observações Pedagógicas</h3>
-
-<textarea
-    name="observacoes_pedagogicas"
-    rows="5"
-    placeholder="Informações relevantes sobre o aluno..."
-></textarea>
-
-<br>
-
-<button type="submit">
-    Guardar Aluno
-</button>
+      <div style="margin-top:1.5rem;">
+        <button type="submit" class="al-save-btn">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          Guardar Aluno
+        </button>
+      </div>
 
     </form>
+  </div>
 
 </div>
 
+<!-- ═══ PESQUISA (tabela + cartoes) ═══ -->
+<script>
+document.getElementById('pesquisaAluno')?.addEventListener('input', function(){
+  var termo = this.value.toLowerCase().trim();
+
+  // linhas da tabela
+  document.querySelectorAll('tr.linha-aluno').forEach(function(tr){
+    var txt = tr.innerText.toLowerCase();
+    tr.style.display = (!termo || txt.includes(termo)) ? '' : 'none';
+  });
+
+  // cartoes mobile
+  document.querySelectorAll('.al-mobile-card.linha-aluno').forEach(function(card){
+    var txt = card.innerText.toLowerCase();
+    card.style.display = (!termo || txt.includes(termo)) ? '' : 'none';
+  });
+});
+</script>
+
 {% endblock %}
+
