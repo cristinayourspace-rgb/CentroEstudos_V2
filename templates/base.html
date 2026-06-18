@@ -118,7 +118,7 @@
     {% if configuracao_global and configuracao_global.logo %}
 
         <img
-            src="{{ url_for('static', filename='logos/' + configuracao_global.logo) }}"
+            src="{{ configuracao_global.logo }}"
             alt="Logótipo"
             style="
                 width:80px;
