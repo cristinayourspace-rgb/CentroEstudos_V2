@@ -6,75 +6,77 @@ Dashboard
 
 {% block conteudo %}
 
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-800">
+<div class="mb-6 md:mb-8">
+
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
         Painel de Controlo
     </h1>
 
-    <p class="text-gray-500 mt-2">
+    <p class="text-gray-500 mt-2 text-sm md:text-base">
         Visão geral do Centro de Estudos
     </p>
+
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">👨‍🎓</div>
-        <p class="text-gray-500">Total de Alunos</p>
-        <h2 class="text-3xl font-bold text-gray-800 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Total de Alunos</p>
+
+        <h2 class="text-3xl font-bold text-gray-800 mt-3">
             {{ total_alunos }}
         </h2>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">✅</div>
-        <p class="text-gray-500">Alunos Ativos</p>
-        <h2 class="text-3xl font-bold text-green-600 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Alunos Ativos</p>
+
+        <h2 class="text-3xl font-bold text-green-600 mt-3">
             {{ alunos_ativos }}
         </h2>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">📍</div>
-        <p class="text-gray-500">Em Estudo</p>
-        <h2 class="text-3xl font-bold text-blue-600 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Em Estudo</p>
+
+        <h2 class="text-3xl font-bold text-blue-600 mt-3">
             {{ alunos_em_estudo }}
         </h2>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">⏱️</div>
-        <p class="text-gray-500">Frequências</p>
-        <h2 class="text-3xl font-bold text-purple-600 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Frequências</p>
+
+        <h2 class="text-3xl font-bold text-purple-600 mt-3">
             {{ total_frequencias }}
         </h2>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">📝</div>
-        <p class="text-gray-500">Notas Registadas</p>
-        <h2 class="text-3xl font-bold text-orange-600 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Notas Registadas</p>
+
+        <h2 class="text-3xl font-bold text-orange-600 mt-3">
             {{ total_notas }}
         </h2>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <div class="text-4xl mb-3">📊</div>
-        <p class="text-gray-500">Média Geral</p>
-        <h2 class="text-3xl font-bold text-indigo-600 mt-2">
+    <div class="bg-white rounded-2xl shadow-md p-5 md:p-6">
+        <p class="text-gray-500 text-sm">Média Geral</p>
+
+        <h2 class="text-3xl font-bold text-indigo-600 mt-3">
             {{ media_geral }}
         </h2>
     </div>
 
 </div>
 
-<div class="mt-8 bg-white rounded-2xl shadow-md p-6">
+<div class="mt-8 bg-white rounded-2xl shadow-md p-5 md:p-6">
 
     <h2 class="text-xl font-bold text-gray-800 mb-6">
         Resumo do Sistema
     </h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         <div class="flex justify-between border-b pb-2">
             <span>Total de Alunos</span>
