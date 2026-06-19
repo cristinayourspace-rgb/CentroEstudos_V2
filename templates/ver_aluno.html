@@ -8,6 +8,63 @@ Ficha do Aluno
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+{# ──────────────────────────────────────────────────────────────────────────
+   RESPONSIVIDADE CIRÚRGICA — apenas Próximos Testes e Histórico de Frequências
+   ────────────────────────────────────────────────────────────────────────── #}
+<style>
+
+    /* --- visibilidade consoante o breakpoint ----------------------------- */
+    .resp-tabela  { display: table; width: 100%; }
+    .resp-cards   { display: none;  }
+
+    @media (max-width: 768px) {
+        .resp-tabela  { display: none !important; }
+        .resp-cards   { display: flex; flex-direction: column; gap: 12px; }
+    }
+
+    /* --- cartão individual ----------------------------------------------- */
+    .resp-card-item {
+        background    : #ffffff;
+        border        : 1px solid #e4e4e4;
+        border-radius : 10px;
+        box-shadow    : 0 2px 8px rgba(0, 0, 0, 0.07);
+        padding       : 16px 18px;
+        width         : 100%;
+        max-width     : 100%;
+        box-sizing    : border-box;
+    }
+
+    /* --- grelha de campos dentro do cartão ------------------------------ */
+    .resp-campos {
+        display               : grid;
+        grid-template-columns : 1fr 1fr;
+        gap                   : 14px 20px;
+    }
+
+    /* campo que deve ocupar a linha inteira (Disciplinas, Observações, Matriz) */
+    .resp-campo-full {
+        grid-column : 1 / -1;
+    }
+
+    /* --- rótulo e valor -------------------------------------------------- */
+    .resp-label {
+        font-size      : 0.70rem;
+        font-weight    : 700;
+        color          : #888888;
+        text-transform : uppercase;
+        letter-spacing : 0.06em;
+        margin-bottom  : 3px;
+    }
+
+    .resp-valor {
+        font-size   : 0.93rem;
+        color       : #1a1a1a;
+        word-break  : break-word;
+        line-height : 1.4;
+    }
+
+</style>
+
 <div class="card">
 
     <h2>{{ aluno.nome }}</h2>
@@ -201,6 +258,9 @@ Ficha do Aluno
 
 <br>
 
+{# ══════════════════════════════════════════════════════════════════════════
+   SECÇÃO: PRÓXIMOS TESTES  — corrigida para mobile
+   ══════════════════════════════════════════════════════════════════════════ #}
 <div class="card">
 
     <h2>Próximos Testes</h2>
@@ -209,7 +269,8 @@ Ficha do Aluno
 
     {% if proximos_testes %}
 
-        <table>
+        {# ── DESKTOP: tabela original (intocada) ── #}
+        <table class="resp-tabela">
 
             <thead>
 
@@ -250,6 +311,55 @@ Ficha do Aluno
 
         </table>
 
+        {# ── MOBILE: cartões responsivos ── #}
+        <div class="resp-cards">
+
+            {% for teste in proximos_testes %}
+
+            <div class="resp-card-item">
+                <div class="resp-campos">
+
+                    <div>
+                        <div class="resp-label">Data</div>
+                        <div class="resp-valor">{{ teste.data_teste }}</div>
+                    </div>
+
+                    <div>
+                        <div class="resp-label">Turma</div>
+                        <div class="resp-valor">{{ teste.turma or aluno.turma }}</div>
+                    </div>
+
+                    <div class="resp-campo-full">
+                        <div class="resp-label">Escola</div>
+                        <div class="resp-valor">{{ teste.escola or aluno.escola }}</div>
+                    </div>
+
+                    <div class="resp-campo-full">
+                        <div class="resp-label">Disciplina</div>
+                        <div class="resp-valor">{{ teste.disciplina }}</div>
+                    </div>
+
+                    {% if teste.matriz %}
+                    <div class="resp-campo-full">
+                        <div class="resp-label">Matriz</div>
+                        <div class="resp-valor">{{ teste.matriz }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if teste.observacoes %}
+                    <div class="resp-campo-full">
+                        <div class="resp-label">Observações</div>
+                        <div class="resp-valor">{{ teste.observacoes }}</div>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            {% endfor %}
+
+        </div>
+
     {% else %}
 
         <p>Sem próximos testes registados para esta turma.</p>
@@ -260,13 +370,17 @@ Ficha do Aluno
 
 <br>
 
+{# ══════════════════════════════════════════════════════════════════════════
+   SECÇÃO: HISTÓRICO DE FREQUÊNCIAS — corrigida para mobile
+   ══════════════════════════════════════════════════════════════════════════ #}
 <div class="card">
 
     <h2>Histórico de Frequências</h2>
 
     <br>
 
-    <table>
+    {# ── DESKTOP: tabela original (intocada) ── #}
+    <table class="resp-tabela">
 
         <thead>
 
@@ -301,6 +415,55 @@ Ficha do Aluno
         </tbody>
 
     </table>
+
+    {# ── MOBILE: cartões responsivos ── #}
+    <div class="resp-cards">
+
+        {% for f in aluno.frequencias %}
+
+        <div class="resp-card-item">
+            <div class="resp-campos">
+
+                <div>
+                    <div class="resp-label">Data</div>
+                    <div class="resp-valor">{{ f.data }}</div>
+                </div>
+
+                <div>
+                    <div class="resp-label">Duração</div>
+                    <div class="resp-valor">{{ f.duracao_formatada }}</div>
+                </div>
+
+                <div>
+                    <div class="resp-label">Entrada</div>
+                    <div class="resp-valor">{{ f.hora_entrada }}</div>
+                </div>
+
+                <div>
+                    <div class="resp-label">Saída</div>
+                    <div class="resp-valor">{{ f.hora_saida }}</div>
+                </div>
+
+                {% if f.disciplinas %}
+                <div class="resp-campo-full">
+                    <div class="resp-label">Disciplinas</div>
+                    <div class="resp-valor">{{ f.disciplinas }}</div>
+                </div>
+                {% endif %}
+
+                {% if f.observacoes %}
+                <div class="resp-campo-full">
+                    <div class="resp-label">Observações</div>
+                    <div class="resp-valor">{{ f.observacoes }}</div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        {% endfor %}
+
+    </div>
 
 </div>
 

@@ -1,126 +1,123 @@
-﻿{% extends "base.html" %}
-
+{% extends "base.html" %}
 {% block titulo %}
 Utilizadores
 {% endblock %}
-
 {% block conteudo %}
+
+<style>
+
+    .table-responsive{
+        width:100%;
+        overflow-x:auto;
+    }
+
+    table{
+        width:100%;
+        border-collapse:collapse;
+    }
+
+    th,
+    td{
+        padding:.75rem;
+        vertical-align:top;
+    }
+
+    .email-cell{
+        word-break:break-word;
+        overflow-wrap:anywhere;
+        white-space:normal;
+    }
+
+    @media (max-width:768px){
+
+        table{
+            font-size:.9rem;
+        }
+
+        td:last-child{
+            display:flex;
+            flex-direction:column;
+            gap:.4rem;
+            align-items:flex-start;
+        }
+
+    }
+
+</style>
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-
     {% for message in messages %}
-
         <div class="alerta-sucesso">
             {{ message }}
         </div>
-
         <br>
-
     {% endfor %}
-
 {% endif %}
 {% endwith %}
-
 <div class="card">
-
     <h2>Utilizadores</h2>
-
     <br>
-
     <h3>Novo Utilizador</h3>
-
     <form method="POST">
-
         <label>Nome</label>
         <input type="text" name="nome" required>
-
         <label>Email</label>
         <input type="email" name="email" required>
-
         <label>Palavra-passe</label>
         <input type="password" name="password" required>
-
         <label>Perfil</label>
-
         <select name="perfil">
-
             <option value="administrador_geral">
                 Administrador Geral
             </option>
-
             <option value="administrador">
                 Administrador
             </option>
-
             <option value="colaborador">
                 Colaborador
             </option>
-
         </select>
-
         <button type="submit">
             Criar Utilizador
         </button>
-
     </form>
-
 </div>
-
 <br>
-
 <div class="card">
-
     <h3>Utilizadores Registados</h3>
-
+    <div class="table-responsive">
     <table>
-
         <thead>
-
             <tr>
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Perfil</th>
                 <th>Ações</th>
             </tr>
-
         </thead>
-
         <tbody>
-
         {% for admin in admins %}
-
             <tr>
-
                 <td>{{ admin.nome }}</td>
-                <td>{{ admin.email }}</td>
+                <td class="email-cell">{{ admin.email }}</td>
                 <td>{{ admin.perfil }}</td>
-
                 <td>
-
                     <a href="/admins/editar/{{ admin.id }}">
                         Editar
                     </a>
-
                     |
-
                     <a
                         href="/admins/apagar/{{ admin.id }}"
                         onclick="return confirm('Apagar utilizador?')"
                     >
                         Apagar
                     </a>
-
                 </td>
-
             </tr>
-
         {% endfor %}
-
         </tbody>
-
     </table>
-
+    </div>
 </div>
-
 {% endblock %}
