@@ -6,131 +6,410 @@ Gestão de Notas
 
 {% block conteudo %}
 
-<div class="card">
+{# ══════════════════════════════════════════════════════════════════════════
+   ESTILOS — apenas o que o base.html não cobre (badges, cards mobile, botões
+   de ação pequenos). Tudo o resto usa .card / input / select / button / table
+   já definidos globalmente em base.html, para manter consistência total com
+   dashboard.html / alunos.html / ver_aluno.html.
+   ══════════════════════════════════════════════════════════════════════════ #}
+<style>
 
+    .badge-nota{
+        display:inline-block;
+        font-size:0.85rem;
+        font-weight:700;
+        color:#2563eb;
+        background:#eff6ff;
+        border:1px solid #bfdbfe;
+        border-radius:8px;
+        padding:2px 12px;
+    }
+
+    .btn-acao{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:0.78rem;
+        font-weight:600;
+        padding:6px 14px;
+        border-radius:8px;
+        text-decoration:none;
+        white-space:nowrap;
+        transition:background 0.15s;
+        border:1px solid transparent;
+    }
+
+    .btn-acao-editar{
+        background:#eff6ff;
+        color:#2563eb;
+        border-color:#bfdbfe;
+    }
+    .btn-acao-editar:hover{ background:#dbeafe; }
+
+    .btn-acao-apagar{
+        background:#fef2f2;
+        color:#ef4444;
+        border-color:#fecaca;
+    }
+    .btn-acao-apagar:hover{ background:#fee2e2; }
+
+    /* Cards de nota no mobile */
+    .nota-card{
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.05);
+        padding:16px 18px;
+        width:100%;
+        box-sizing:border-box;
+    }
+
+    .nota-card-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px 18px;
+        margin-bottom:14px;
+    }
+
+    .nota-card-grid .full{ grid-column:1 / -1; }
+
+    .nota-label{
+        font-size:0.68rem;
+        font-weight:700;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        margin-bottom:3px;
+    }
+
+    .nota-valor{
+        font-size:0.93rem;
+        color:#1f2937;
+        font-weight:500;
+        word-break:break-word;
+    }
+
+    .nota-card-acoes{
+        display:flex;
+        gap:8px;
+        padding-top:12px;
+        border-top:1px solid #f1f5f9;
+    }
+
+    /* Tabela desktop: hover + cabeçalho já vêm do base.html, só refinamos o hover */
+    .tabela-notas tbody tr:hover td{
+        background:#f9fafb;
+    }
+
+    /* Botão de submit largura total no telemóvel */
+    @media (max-width:640px){
+        .btn-guardar-nota{ width:100%; }
+    }
+
+    /* ── Layout próprio (não depende do Tailwind CDN) ─────────────────── */
+    .pagina-header{ margin-bottom:24px; }
+    .pagina-header h2{
+        font-size:1.6rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 6px 0;
+    }
+    .pagina-header p{
+        color:#6b7280;
+        margin:0;
+    }
+
+    .kpi-grid{
+        display:grid;
+        grid-template-columns:repeat(2, 1fr);
+        gap:14px;
+        margin-bottom:24px;
+    }
+    @media (min-width:768px){
+        .kpi-grid{ grid-template-columns:repeat(4, 1fr); gap:16px; }
+    }
+
+    .kpi-card{
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:18px;
+        box-shadow:0 8px 24px rgba(0,0,0,0.06);
+        padding:18px;
+        box-sizing:border-box;
+    }
+    .kpi-label{
+        font-size:0.72rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        margin:0 0 6px 0;
+    }
+    .kpi-valor{
+        font-size:1.7rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0;
+    }
+    .kpi-sub{
+        font-size:0.75rem;
+        color:#9ca3af;
+        margin:4px 0 0 0;
+    }
+
+    .form-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:4px 24px;
+    }
+    @media (min-width:640px){
+        .form-grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    .campo-label{
+        display:block;
+        font-size:0.75rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:4px;
+    }
+
+    .rodape-form{
+        display:flex;
+        justify-content:flex-end;
+        margin-top:8px;
+    }
+
+    .lista-acoes{ display:flex; gap:8px; }
+
+    .tabela-desktop{ display:none; }
+    .cards-mobile{ display:flex; flex-direction:column; gap:12px; }
+
+    @media (min-width:768px){
+        .tabela-desktop{ display:block; }
+        .cards-mobile{ display:none; }
+    }
+
+    .estado-vazio{
+        text-align:center;
+        padding:48px 16px;
+        color:#9ca3af;
+    }
+    .estado-vazio i{ font-size:2.2rem; margin-bottom:10px; opacity:0.5; }
+
+</style>
+
+{# ── Cabeçalho da página ──────────────────────────────────────────────── #}
+<div class="pagina-header">
     <h2>Gestão de Notas</h2>
+    <p>Registe, acompanhe e consulte todas as avaliações dos alunos.</p>
+</div>
 
-    <br>
+{# ── KPI Cards ───────────────────────────────────────────────────────── #}
+<div class="kpi-grid">
+
+    <div class="kpi-card">
+        <p class="kpi-label">Total de Notas</p>
+        <p class="kpi-valor">{{ notas | length }}</p>
+        <p class="kpi-sub">registos totais</p>
+    </div>
+
+    <div class="kpi-card">
+        <p class="kpi-label">Média Geral</p>
+        <p class="kpi-valor">
+            {% if notas %}
+                {{ "%.1f"|format(notas | map(attribute='nota') | list | sum / notas | length) }}
+            {% else %}
+                —
+            {% endif %}
+        </p>
+        <p class="kpi-sub">pontos em 100</p>
+    </div>
+
+    <div class="kpi-card">
+        <p class="kpi-label">Alunos Avaliados</p>
+        <p class="kpi-valor">
+            {{ notas | map(attribute='aluno_id') | list | unique | list | length }}
+        </p>
+        <p class="kpi-sub">alunos distintos</p>
+    </div>
+
+    <div class="kpi-card">
+        <p class="kpi-label">Disciplinas</p>
+        <p class="kpi-valor">
+            {{ notas | map(attribute='disciplina') | list | unique | list | length }}
+        </p>
+        <p class="kpi-sub">disciplinas distintas</p>
+    </div>
+
+</div>
+
+{# ── Formulário ──────────────────────────────────────────────────────── #}
+<div class="card">
 
     <h3>Registar Nota</h3>
 
     <form method="POST">
 
-        <label>Aluno</label>
+        <div class="form-grid">
 
-        <select
-            name="aluno_id"
-            required
-        >
-            <option value="">
-                Selecione um aluno
-            </option>
+            <div>
+                <label for="aluno_id" class="campo-label">
+                    Aluno
+                </label>
+                <select name="aluno_id" id="aluno_id" required>
+                    <option value="">Selecione um aluno</option>
+                    {% for aluno in alunos %}
+                    <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-            {% for aluno in alunos %}
+            <div>
+                <label for="disciplina" class="campo-label">
+                    Disciplina
+                </label>
+                <input
+                    type="text"
+                    name="disciplina"
+                    id="disciplina"
+                    placeholder="ex: Matemática"
+                    required
+                >
+            </div>
 
-            <option value="{{ aluno.id }}">
-                {{ aluno.nome }}
-            </option>
+            <div>
+                <label for="nota" class="campo-label">
+                    Nota (0 a 100)
+                </label>
+                <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    name="nota"
+                    id="nota"
+                    placeholder="ex: 78.5"
+                    required
+                >
+            </div>
 
-            {% endfor %}
+            <div>
+                <label for="data_avaliacao" class="campo-label">
+                    Data da Avaliação
+                </label>
+                <input
+                    type="date"
+                    name="data_avaliacao"
+                    id="data_avaliacao"
+                    required
+                >
+            </div>
 
-        </select>
+        </div>
 
-        <label>Disciplina</label>
-
-        <input
-            type="text"
-            name="disciplina"
-            required
-        >
-
-        <label>Nota (0 a 100)</label>
-
-        <input
-            type="number"
-            min="0"
-            max="100"
-            step="0.01"
-            name="nota"
-            required
-        >
-
-        <label>Data da Avaliação</label>
-
-        <input
-            type="date"
-            name="data_avaliacao"
-            required
-        >
-
-        <button type="submit">
-            Guardar Nota
-        </button>
+        <div class="rodape-form">
+            <button type="submit" class="btn-guardar-nota">
+                Guardar Nota
+            </button>
+        </div>
 
     </form>
 
 </div>
 
-<br>
-
+{# ── Listagem de Notas ──────────────────────────────────────────────── #}
 <div class="card">
 
     <h3>Notas Registadas</h3>
 
-    <br>
+    {% if notas %}
 
-    <table>
+        {# ── DESKTOP: tabela (oculta no mobile via CSS próprio, não Tailwind) ── #}
+        <div class="tabela-desktop table-responsive">
+            <table class="tabela-notas">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Disciplina</th>
+                        <th>Nota</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for nota in notas %}
+                    <tr>
+                        <td>{{ nota.aluno.nome }}</td>
+                        <td>{{ nota.disciplina }}</td>
+                        <td><span class="badge-nota">{{ nota.nota }}</span></td>
+                        <td>{{ nota.data_avaliacao }}</td>
+                        <td>
+                            <div class="lista-acoes">
+                                <a href="/notas/editar/{{ nota.id }}" class="btn-acao btn-acao-editar">Editar</a>
+                                <a href="/notas/apagar/{{ nota.id }}" class="btn-acao btn-acao-apagar"
+                                   onclick="return confirm('Apagar esta nota?')">Apagar</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <thead>
+        {# ── MOBILE: cartões (ocultos no desktop via CSS próprio) ── #}
+        <div class="cards-mobile">
 
-            <tr>
-                <th>Aluno</th>
-                <th>Disciplina</th>
-                <th>Nota</th>
-                <th>Data</th>
-                <th>Ações</th>
-            </tr>
+            {% for nota in notas %}
+            <div class="nota-card">
 
-        </thead>
+                <div class="nota-card-grid">
 
-        <tbody>
+                    <div class="full">
+                        <div class="nota-label">Aluno</div>
+                        <div class="nota-valor">{{ nota.aluno.nome }}</div>
+                    </div>
 
-        {% for nota in notas %}
+                    <div>
+                        <div class="nota-label">Disciplina</div>
+                        <div class="nota-valor">{{ nota.disciplina }}</div>
+                    </div>
 
-            <tr>
+                    <div>
+                        <div class="nota-label">Nota</div>
+                        <div class="nota-valor">
+                            <span class="badge-nota">{{ nota.nota }}</span>
+                        </div>
+                    </div>
 
-                <td>{{ nota.aluno.nome }}</td>
+                    <div>
+                        <div class="nota-label">Data</div>
+                        <div class="nota-valor">{{ nota.data_avaliacao }}</div>
+                    </div>
 
-                <td>{{ nota.disciplina }}</td>
+                </div>
 
-                <td>{{ nota.nota }}</td>
+                <div class="nota-card-acoes">
+                    <a href="/notas/editar/{{ nota.id }}" class="btn-acao btn-acao-editar">Editar</a>
+                    <a href="/notas/apagar/{{ nota.id }}" class="btn-acao btn-acao-apagar"
+                       onclick="return confirm('Apagar esta nota?')">Apagar</a>
+                </div>
 
-                <td>{{ nota.data_avaliacao }}</td>
+            </div>
+            {% endfor %}
 
-                <td>
+        </div>
 
-                    <a href="/notas/editar/{{ nota.id }}">
-                        Editar
-                    </a>
+    {% else %}
 
-                    |
+        <div class="estado-vazio">
+            <i class="fa-solid fa-file-circle-question"></i>
+            <p>Sem notas registadas. Utilize o formulário acima para adicionar a primeira avaliação.</p>
+        </div>
 
-                    <a
-                        href="/notas/apagar/{{ nota.id }}"
-                        onclick="return confirm('Apagar esta nota?')"
-                    >
-                        Apagar
-                    </a>
-
-                </td>
-
-            </tr>
-
-        {% endfor %}
-
-        </tbody>
-
-    </table>
+    {% endif %}
 
 </div>
 
