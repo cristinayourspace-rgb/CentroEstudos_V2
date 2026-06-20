@@ -1,123 +1,395 @@
 {% extends "base.html" %}
+
 {% block titulo %}
 Utilizadores
 {% endblock %}
+
 {% block conteudo %}
 
+{# ══════════════════════════════════════════════════════════════════════════
+   ESTILOS — CSS próprio (sem Tailwind), consistente com base.html / notas.html
+   ══════════════════════════════════════════════════════════════════════════ #}
 <style>
 
-    .table-responsive{
-        width:100%;
-        overflow-x:auto;
+    /* ── Cabeçalho da página ──────────────────────────────────────────── */
+    .pagina-header{ margin-bottom:24px; }
+    .pagina-header h2{
+        font-size:1.6rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 6px 0;
+    }
+    .pagina-header p{
+        color:#6b7280;
+        margin:0;
     }
 
-    table{
-        width:100%;
-        border-collapse:collapse;
+    /* ── Mensagem de sucesso ──────────────────────────────────────────── */
+    .alerta-sucesso{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        background:#f0fdf4;
+        color:#15803d;
+        border:1px solid #bbf7d0;
+        border-radius:14px;
+        padding:14px 18px;
+        font-size:0.9rem;
+        font-weight:500;
+        box-shadow:0 2px 10px rgba(0,0,0,0.04);
+        margin-bottom:16px;
+    }
+    .alerta-sucesso i{
+        font-size:1.1rem;
+        color:#16a34a;
     }
 
-    th,
-    td{
-        padding:.75rem;
-        vertical-align:top;
+    /* ── Formulário ────────────────────────────────────────────────────── */
+    .form-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:4px 24px;
+    }
+    @media (min-width:640px){
+        .form-grid{ grid-template-columns:1fr 1fr; }
     }
 
+    .campo-label{
+        display:block;
+        font-size:0.75rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:4px;
+    }
+
+    .rodape-form{
+        display:flex;
+        justify-content:flex-end;
+        margin-top:8px;
+    }
+
+    @media (max-width:640px){
+        .rodape-form{ justify-content:stretch; }
+        .rodape-form button{ width:100%; }
+    }
+
+    /* ── Badges de perfil ─────────────────────────────────────────────── */
+    .badge-perfil{
+        display:inline-block;
+        font-size:0.75rem;
+        font-weight:600;
+        padding:4px 14px;
+        border-radius:999px;
+        white-space:nowrap;
+    }
+
+    .badge-administrador_geral{
+        background:#fef2f2;
+        color:#dc2626;
+        border:1px solid #fecaca;
+    }
+
+    .badge-administrador{
+        background:#eff6ff;
+        color:#2563eb;
+        border:1px solid #bfdbfe;
+    }
+
+    .badge-colaborador{
+        background:#f0fdf4;
+        color:#16a34a;
+        border:1px solid #bbf7d0;
+    }
+
+    /* ── Email sem overflow ───────────────────────────────────────────── */
     .email-cell{
         word-break:break-word;
         overflow-wrap:anywhere;
         white-space:normal;
     }
 
-    @media (max-width:768px){
-
-        table{
-            font-size:.9rem;
-        }
-
-        td:last-child{
-            display:flex;
-            flex-direction:column;
-            gap:.4rem;
-            align-items:flex-start;
-        }
-
+    /* ── Botões de ação ───────────────────────────────────────────────── */
+    .btn-acao{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:0.78rem;
+        font-weight:600;
+        padding:6px 14px;
+        border-radius:8px;
+        text-decoration:none;
+        white-space:nowrap;
+        transition:background 0.15s;
+        border:1px solid transparent;
     }
+    .btn-acao-editar{
+        background:#eff6ff;
+        color:#2563eb;
+        border-color:#bfdbfe;
+    }
+    .btn-acao-editar:hover{ background:#dbeafe; }
+
+    .btn-acao-apagar{
+        background:#fef2f2;
+        color:#ef4444;
+        border-color:#fecaca;
+    }
+    .btn-acao-apagar:hover{ background:#fee2e2; }
+
+    .lista-acoes{ display:flex; gap:8px; }
+
+    /* ── Tabela ────────────────────────────────────────────────────────── */
+    .tabela-admins tbody tr:hover td{ background:#f9fafb; }
+
+    /* ── Toggle tabela/cards (sem Tailwind) ───────────────────────────── */
+    .tabela-desktop{ display:none; }
+    .cards-mobile{ display:flex; flex-direction:column; gap:12px; }
+
+    @media (min-width:768px){
+        .tabela-desktop{ display:block; }
+        .cards-mobile{ display:none; }
+    }
+
+    /* ── Cards mobile ──────────────────────────────────────────────────── */
+    .admin-card{
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.05);
+        padding:16px 18px;
+        width:100%;
+        box-sizing:border-box;
+    }
+
+    .admin-card-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:12px;
+        margin-bottom:14px;
+    }
+
+    .admin-label{
+        font-size:0.68rem;
+        font-weight:700;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        margin-bottom:3px;
+    }
+
+    .admin-valor{
+        font-size:0.93rem;
+        color:#1f2937;
+        font-weight:500;
+        word-break:break-word;
+    }
+
+    .admin-card-acoes{
+        display:flex;
+        gap:8px;
+        padding-top:12px;
+        border-top:1px solid #f1f5f9;
+    }
+
+    /* ── Estado vazio ──────────────────────────────────────────────────── */
+    .estado-vazio{
+        text-align:center;
+        padding:48px 16px;
+        color:#9ca3af;
+    }
+    .estado-vazio i{ font-size:2.2rem; margin-bottom:10px; opacity:0.5; }
 
 </style>
 
+{# ── Cabeçalho da página ──────────────────────────────────────────────── #}
+<div class="pagina-header">
+    <h2>Utilizadores</h2>
+    <p>Gestão de acessos e permissões da plataforma</p>
+</div>
+
+{# ── Mensagens flash ────────────────────────────────────────────────────── #}
 {% with messages = get_flashed_messages() %}
 {% if messages %}
     {% for message in messages %}
         <div class="alerta-sucesso">
-            {{ message }}
+            <i class="fa-solid fa-circle-check"></i>
+            <span>{{ message }}</span>
         </div>
-        <br>
     {% endfor %}
 {% endif %}
 {% endwith %}
+
+{# ── Formulário Novo Utilizador ─────────────────────────────────────────── #}
 <div class="card">
-    <h2>Utilizadores</h2>
-    <br>
+
     <h3>Novo Utilizador</h3>
+
     <form method="POST">
-        <label>Nome</label>
-        <input type="text" name="nome" required>
-        <label>Email</label>
-        <input type="email" name="email" required>
-        <label>Palavra-passe</label>
-        <input type="password" name="password" required>
-        <label>Perfil</label>
-        <select name="perfil">
-            <option value="administrador_geral">
-                Administrador Geral
-            </option>
-            <option value="administrador">
-                Administrador
-            </option>
-            <option value="colaborador">
-                Colaborador
-            </option>
-        </select>
-        <button type="submit">
-            Criar Utilizador
-        </button>
+
+        <div class="form-grid">
+
+            <div>
+                <label for="nome" class="campo-label">Nome</label>
+                <input type="text" name="nome" id="nome" required>
+            </div>
+
+            <div>
+                <label for="email" class="campo-label">Email</label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <div>
+                <label for="password" class="campo-label">Palavra-passe</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+
+            <div>
+                <label for="perfil" class="campo-label">Perfil</label>
+                <select name="perfil" id="perfil">
+                    <option value="administrador_geral">Administrador Geral</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="colaborador">Colaborador</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="rodape-form">
+            <button type="submit">
+                <i class="fa-solid fa-user-plus"></i>
+                Criar Utilizador
+            </button>
+        </div>
+
     </form>
+
 </div>
-<br>
+
+{# ── Utilizadores Registados ────────────────────────────────────────────── #}
 <div class="card">
+
     <h3>Utilizadores Registados</h3>
-    <div class="table-responsive">
-    <table>
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Perfil</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for admin in admins %}
-            <tr>
-                <td>{{ admin.nome }}</td>
-                <td class="email-cell">{{ admin.email }}</td>
-                <td>{{ admin.perfil }}</td>
-                <td>
-                    <a href="/admins/editar/{{ admin.id }}">
-                        Editar
-                    </a>
-                    |
+
+    {% if admins %}
+
+        {# ── DESKTOP: tabela ── #}
+        <div class="tabela-desktop table-responsive">
+
+            <table class="tabela-admins">
+
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Perfil</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for admin in admins %}
+                    <tr>
+                        <td>{{ admin.nome }}</td>
+                        <td class="email-cell">{{ admin.email }}</td>
+                        <td>
+                            <span class="badge-perfil badge-{{ admin.perfil }}">
+                                {% if admin.perfil == "administrador_geral" %}
+                                    Administrador Geral
+                                {% elif admin.perfil == "administrador" %}
+                                    Administrador
+                                {% elif admin.perfil == "colaborador" %}
+                                    Colaborador
+                                {% else %}
+                                    {{ admin.perfil }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="lista-acoes">
+                                <a href="/admins/editar/{{ admin.id }}" class="btn-acao btn-acao-editar">
+                                    Editar
+                                </a>
+                                <a
+                                    href="/admins/apagar/{{ admin.id }}"
+                                    onclick="return confirm('Apagar utilizador?')"
+                                    class="btn-acao btn-acao-apagar"
+                                >
+                                    Apagar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {# ── MOBILE: cards ── #}
+        <div class="cards-mobile">
+
+            {% for admin in admins %}
+            <div class="admin-card">
+
+                <div class="admin-card-grid">
+
+                    <div>
+                        <div class="admin-label">Nome</div>
+                        <div class="admin-valor">{{ admin.nome }}</div>
+                    </div>
+
+                    <div>
+                        <div class="admin-label">Email</div>
+                        <div class="admin-valor email-cell">{{ admin.email }}</div>
+                    </div>
+
+                    <div>
+                        <div class="admin-label">Perfil</div>
+                        <div class="admin-valor">
+                            <span class="badge-perfil badge-{{ admin.perfil }}">
+                                {% if admin.perfil == "administrador_geral" %}
+                                    Administrador Geral
+                                {% elif admin.perfil == "administrador" %}
+                                    Administrador
+                                {% elif admin.perfil == "colaborador" %}
+                                    Colaborador
+                                {% else %}
+                                    {{ admin.perfil }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="admin-card-acoes">
+                    <a href="/admins/editar/{{ admin.id }}" class="btn-acao btn-acao-editar">Editar</a>
                     <a
                         href="/admins/apagar/{{ admin.id }}"
                         onclick="return confirm('Apagar utilizador?')"
+                        class="btn-acao btn-acao-apagar"
                     >
                         Apagar
                     </a>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+            <i class="fa-solid fa-users"></i>
+            <p>Sem utilizadores registados.</p>
+        </div>
+
+    {% endif %}
+
 </div>
+
 {% endblock %}
