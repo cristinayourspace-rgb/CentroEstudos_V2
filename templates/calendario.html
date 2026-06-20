@@ -6,228 +6,434 @@ Calendário do Centro
 
 {% block conteudo %}
 
+{# ══════════════════════════════════════════════════════════════════════════
+   ESTILOS — CSS próprio (sem Tailwind), consistente com base.html / notas.html
+   ══════════════════════════════════════════════════════════════════════════ #}
 <style>
 
+    /* ── Cabeçalho da página ──────────────────────────────────────────── */
+    .pagina-header{ margin-bottom:24px; }
+    .pagina-header h2{
+        font-size:1.6rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 6px 0;
+    }
+    .pagina-header p{
+        color:#6b7280;
+        margin:0;
+    }
+
+    /* ── Navegação do mês ─────────────────────────────────────────────── */
+    .mes-nav{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:12px;
+        margin-bottom:18px;
+    }
+
+    .mes-nav h3{
+        font-size:1.15rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0;
+        text-align:center;
+        flex:1;
+    }
+
+    .btn-mes{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        background:#eff6ff;
+        color:#2563eb;
+        border:1px solid #bfdbfe;
+        border-radius:12px;
+        padding:9px 16px;
+        font-size:0.88rem;
+        font-weight:600;
+        text-decoration:none;
+        transition:background 0.15s;
+        white-space:nowrap;
+    }
+    .btn-mes:hover{ background:#dbeafe; }
+
+    @media (max-width:480px){
+        .mes-nav{ flex-direction:column; }
+        .mes-nav h3{ order:-1; }
+        .btn-mes{ width:100%; justify-content:center; }
+    }
+
+    /* ── Legenda de cores ─────────────────────────────────────────────── */
+    .legenda{
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        margin-bottom:22px;
+    }
+
+    .legenda-badge{
+        display:inline-flex;
+        align-items:center;
+        font-size:0.75rem;
+        font-weight:600;
+        padding:5px 14px;
+        border-radius:999px;
+        color:white;
+        white-space:nowrap;
+    }
+
+    /* ── Calendário ────────────────────────────────────────────────────── */
     .calendar-wrapper{
         width:100%;
         overflow-x:auto;
         -webkit-overflow-scrolling:touch;
+        border-radius:14px;
+        border:1px solid #e5e7eb;
     }
 
-    .calendar-wrapper table{
-        min-width:700px;
-    }
-
-    input,
-    select,
-    textarea{
+    .tabela-calendario{
+        min-width:760px;
         width:100%;
-        max-width:100%;
+        border-collapse:separate;
+        border-spacing:0;
+    }
+
+    .tabela-calendario thead th{
+        background:#f8fafc;
+        color:#6b7280;
+        font-size:0.75rem;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        padding:12px;
+        text-align:left;
+        border-bottom:1px solid #e5e7eb;
+    }
+
+    .dia-celula{
+        height:140px;
+        width:14.2857%;
+        vertical-align:top;
+        padding:10px;
+        border-bottom:1px solid #f1f5f9;
+        border-right:1px solid #f1f5f9;
+        box-sizing:border-box;
+    }
+
+    .dia-numero{
+        font-weight:700;
+        color:#1f2937;
+        font-size:0.95rem;
+        display:block;
+        margin-bottom:8px;
+        padding-bottom:6px;
+        border-bottom:1px solid #f1f5f9;
+    }
+
+    .dia-hoje{
+        background:#eff6ff;
+        box-shadow:inset 0 0 0 2px #2563eb;
+        border-radius:8px;
+    }
+
+    .dia-hoje .dia-numero{
+        color:#2563eb;
+    }
+
+    .evento-chip{
+        display:block;
+        margin-bottom:5px;
+        padding:5px 8px;
+        border-radius:8px;
+        color:white;
+        font-size:0.72rem;
+        font-weight:600;
+        transition:opacity 0.15s;
+    }
+    .evento-chip:hover{ opacity:0.85; }
+
+    .evento-chip a{
+        color:white;
+        text-decoration:none;
+        display:block;
+    }
+
+    /* ── Grid dos formulários ─────────────────────────────────────────── */
+    .formularios-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:20px;
+        margin:24px 0;
+    }
+    @media (min-width:768px){
+        .formularios-grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    .campo-label{
+        display:block;
+        font-size:0.75rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:4px;
+        margin-top:12px;
+    }
+    .campo-label:first-of-type{ margin-top:0; }
+
+    .campo-checkbox{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin:14px 0;
+        font-size:0.9rem;
+        color:#374151;
+    }
+    .campo-checkbox input{ width:auto; margin:0; }
+
+    .rodape-form{
+        display:flex;
+        justify-content:flex-end;
+        margin-top:8px;
+    }
+
+    @media (max-width:640px){
+        .rodape-form{ justify-content:stretch; }
+        .rodape-form button{ width:100%; }
+    }
+
+    /* ── Badges de tipo (tabela de registos) ──────────────────────────── */
+    .badge-tipo{
+        display:inline-block;
+        font-size:0.75rem;
+        font-weight:600;
+        padding:4px 12px;
+        border-radius:999px;
+        color:white;
+        white-space:nowrap;
+    }
+
+    /* ── Botões de ação ───────────────────────────────────────────────── */
+    .btn-acao{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:0.78rem;
+        font-weight:600;
+        padding:6px 14px;
+        border-radius:8px;
+        text-decoration:none;
+        white-space:nowrap;
+        transition:background 0.15s;
+        border:1px solid transparent;
+    }
+    .btn-acao-editar{
+        background:#eff6ff;
+        color:#2563eb;
+        border-color:#bfdbfe;
+    }
+    .btn-acao-editar:hover{ background:#dbeafe; }
+
+    .btn-acao-apagar{
+        background:#fef2f2;
+        color:#ef4444;
+        border-color:#fecaca;
+    }
+    .btn-acao-apagar:hover{ background:#fee2e2; }
+
+    .lista-acoes{ display:flex; gap:8px; }
+
+    /* ── Tabela de registos: hover ─────────────────────────────────────── */
+    .tabela-registos tbody tr:hover td{ background:#f9fafb; }
+
+    /* ── Toggle tabela/cards (sem Tailwind) ───────────────────────────── */
+    .tabela-desktop{ display:none; }
+    .cards-mobile{ display:flex; flex-direction:column; gap:12px; }
+
+    @media (min-width:768px){
+        .tabela-desktop{ display:block; }
+        .cards-mobile{ display:none; }
+    }
+
+    /* ── Cards mobile de registos ─────────────────────────────────────── */
+    .registo-card{
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.05);
+        padding:16px 18px;
+        width:100%;
+        box-sizing:border-box;
+    }
+
+    .registo-card-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px 18px;
+        margin-bottom:14px;
+    }
+    .registo-card-grid .full{ grid-column:1 / -1; }
+
+    .registo-label{
+        font-size:0.68rem;
+        font-weight:700;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        margin-bottom:3px;
+    }
+
+    .registo-valor{
+        font-size:0.93rem;
+        color:#1f2937;
+        font-weight:500;
+        word-break:break-word;
+    }
+
+    .registo-card-acoes{
+        display:flex;
+        gap:8px;
+        padding-top:12px;
+        border-top:1px solid #f1f5f9;
     }
 
 </style>
 
+{# ── Cabeçalho da página ──────────────────────────────────────────────── #}
+<div class="pagina-header">
+    <h2>Calendário do Centro</h2>
+    <p>Gestão de testes, eventos e dias especiais</p>
+</div>
+
 <div class="card">
 
-    <div
-        style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            flex-wrap:wrap;
-            gap:10px;
-        "
-    >
+    {# ── Navegação do mês ─────────────────────────────────────────────── #}
+    <div class="mes-nav">
 
         <a
             href="/calendario?mes={{ mes-1 if mes > 1 else 12 }}&ano={{ ano if mes > 1 else ano-1 }}"
+            class="btn-mes"
         >
             ◀ Mês anterior
         </a>
 
-        <h2>
-            Calendário do Centro - {{ nome_mes }} {{ ano }}
-        </h2>
+        <h3>{{ nome_mes }} {{ ano }}</h3>
 
         <a
             href="/calendario?mes={{ mes+1 if mes < 12 else 1 }}&ano={{ ano if mes < 12 else ano+1 }}"
+            class="btn-mes"
         >
             Mês seguinte ▶
         </a>
 
     </div>
 
-    <br>
+    {# ── Legenda de cores ─────────────────────────────────────────────── #}
+    <div class="legenda">
 
-    <div
-        style="
-            display:flex;
-            flex-wrap:wrap;
-            gap:10px;
-            margin-bottom:20px;
-        "
-    >
-
-        <span style="background:#ef4444;color:white;padding:5px 10px;border-radius:4px;">
-            Feriado
-        </span>
-
-        <span style="background:#f97316;color:white;padding:5px 10px;border-radius:4px;">
-            Paragem Letiva
-        </span>
-
-        <span style="background:#facc15;color:black;padding:5px 10px;border-radius:4px;">
-            Férias
-        </span>
-
-        <span style="background:#3b82f6;color:white;padding:5px 10px;border-radius:4px;">
-            Teste
-        </span>
-
-        <span style="background:#22c55e;color:white;padding:5px 10px;border-radius:4px;">
-            Reunião
-        </span>
-
-        <span style="background:#a855f7;color:white;padding:5px 10px;border-radius:4px;">
-            Aviso
-        </span>
-
-        <span style="background:#6b7280;color:white;padding:5px 10px;border-radius:4px;">
-            Outros
-        </span>
+        <span class="legenda-badge" style="background:#ef4444;">Feriado</span>
+        <span class="legenda-badge" style="background:#f97316;">Paragem Letiva</span>
+        <span class="legenda-badge" style="background:#facc15;color:#1f2937;">Férias</span>
+        <span class="legenda-badge" style="background:#3b82f6;">Teste</span>
+        <span class="legenda-badge" style="background:#22c55e;">Reunião</span>
+        <span class="legenda-badge" style="background:#a855f7;">Aviso</span>
+        <span class="legenda-badge" style="background:#6b7280;">Outros</span>
 
     </div>
 
+    {# ── Calendário principal ──────────────────────────────────────────── #}
     <div class="calendar-wrapper">
 
-    <table>
+        <table class="tabela-calendario">
 
-        <thead>
+            <thead>
+                <tr>
+                    <th>Seg</th>
+                    <th>Ter</th>
+                    <th>Qua</th>
+                    <th>Qui</th>
+                    <th>Sex</th>
+                    <th>Sáb</th>
+                    <th>Dom</th>
+                </tr>
+            </thead>
 
-            <tr>
-                <th>Seg</th>
-                <th>Ter</th>
-                <th>Qua</th>
-                <th>Qui</th>
-                <th>Sex</th>
-                <th>Sáb</th>
-                <th>Dom</th>
-            </tr>
+            <tbody>
 
-        </thead>
+            {% for semana in calendario_mes %}
 
-        <tbody>
+                <tr>
 
-        {% for semana in calendario_mes %}
+                {% for dia in semana %}
 
-            <tr>
+                    {% set data_atual = "%04d-%02d-%02d"|format(ano, mes, dia) %}
 
-            {% for dia in semana %}
+                    {% set e_hoje = (
+                        dia != 0
+                        and hoje.day == dia
+                        and hoje.month == mes
+                        and hoje.year == ano
+                    ) %}
 
-                {% set data_atual = "%04d-%02d-%02d"|format(ano, mes, dia) %}
+                    <td class="dia-celula{% if e_hoje %} dia-hoje{% endif %}">
 
-                <td
-                    style="
-                        height:140px;
-                        width:14%;
-                        vertical-align:top;
+                        {% if dia != 0 %}
 
-                        {% if dia != 0
-                           and hoje.day == dia
-                           and hoje.month == mes
-                           and hoje.year == ano %}
-                           border:3px solid #2563eb;
-                           background:#dbeafe;
-                        {% endif %}
-                    "
-                >
+                            <span class="dia-numero">{{ dia }}</span>
 
-                    {% if dia != 0 %}
+                            {% if dia in eventos %}
 
-                        <strong>
-                            {{ dia }}
-                        </strong>
+                                {% for evento in eventos[dia] %}
 
-                        <hr>
-
-                        {% if dia in eventos %}
-
-                            {% for evento in eventos[dia] %}
-
-                                <div
-                                    style="
-                                        margin-bottom:5px;
-                                        padding:4px;
-                                        border-radius:4px;
-                                        background:
-                                        {{ cores_tipo.get(evento.tipo, '#e5e7eb') }};
-                                        color:white;
-                                        font-size:12px;
-                                    "
-                                >
-
-                                    <a
-                                        href="/calendario/dia/{{ evento.data }}"
-                                        style="
-                                            color:white;
-                                            text-decoration:none;
-                                        "
+                                    <div
+                                        class="evento-chip"
+                                        style="background:{{ cores_tipo.get(evento.tipo, '#e5e7eb') }};"
                                     >
 
-                                        {{ evento.titulo }}
+                                        <a href="/calendario/dia/{{ evento.data }}">
+                                            {{ evento.titulo }}
+                                        </a>
 
-                                    </a>
+                                    </div>
 
-                                </div>
+                                {% endfor %}
 
-                            {% endfor %}
+                            {% endif %}
 
                         {% endif %}
 
-                    {% endif %}
+                    </td>
 
-                </td>
+                {% endfor %}
+
+                </tr>
 
             {% endfor %}
 
-            </tr>
+            </tbody>
 
-        {% endfor %}
-
-        </tbody>
-
-    </table>
+        </table>
 
     </div>
 
 </div>
 
-<div
-    style="
-        display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-        gap:20px;
-        margin-top:20px;
-        margin-bottom:20px;
-    "
->
+{# ── Formulários: Novo Teste / Novo Evento ─────────────────────────────── #}
+<div class="formularios-grid">
 
-    <!-- COLUNA TESTE -->
-
+    {# ── Novo Teste ───────────────────────────────────────────────────── #}
     <div class="card">
 
-        <h2>Novo Teste</h2>
+        <h3>Novo Teste</h3>
 
         <form method="POST">
 
-            <input
-                type="hidden"
-                name="registo_tipo"
-                value="teste"
-            >
+            <input type="hidden" name="registo_tipo" value="teste">
 
-            <p>Escola</p>
-
+            <label class="campo-label">Escola</label>
             <input
                 type="text"
                 name="escola"
@@ -241,8 +447,7 @@ Calendário do Centro
                 {% endfor %}
             </datalist>
 
-            <p>Turma</p>
-
+            <label class="campo-label">Turma</label>
             <input
                 type="text"
                 name="turma"
@@ -256,62 +461,39 @@ Calendário do Centro
                 {% endfor %}
             </datalist>
 
-            <p>Disciplina</p>
+            <label class="campo-label">Disciplina</label>
+            <input type="text" name="disciplina" required>
 
-            <input
-                type="text"
-                name="disciplina"
-                required
-            >
+            <label class="campo-label">Data</label>
+            <input type="date" name="data_teste" required>
 
-            <p>Data</p>
-
-            <input
-                type="date"
-                name="data_teste"
-                required
-            >
-
-            <p>Matriz</p>
-
+            <label class="campo-label">Matriz</label>
             <textarea name="matriz" rows="4"></textarea>
 
-            <p>Observações</p>
-
+            <label class="campo-label">Observações</label>
             <textarea name="observacoes" rows="4"></textarea>
 
-            <button type="submit">
-                Guardar Teste
-            </button>
+            <div class="rodape-form">
+                <button type="submit">Guardar Teste</button>
+            </div>
 
         </form>
 
     </div>
 
-    <!-- COLUNA EVENTO -->
-
+    {# ── Novo Evento do Centro ────────────────────────────────────────── #}
     <div class="card">
 
-        <h2>Novo Evento do Centro</h2>
+        <h3>Novo Evento do Centro</h3>
 
         <form method="POST">
 
-            <input
-                type="hidden"
-                name="registo_tipo"
-                value="evento"
-            >
+            <input type="hidden" name="registo_tipo" value="evento">
 
-            <p>Data</p>
+            <label class="campo-label">Data</label>
+            <input type="date" name="data" required>
 
-            <input
-                type="date"
-                name="data"
-                required
-            >
-
-            <p>Tipo</p>
-
+            <label class="campo-label">Tipo</label>
             <select name="tipo" required>
                 <option value="Reunião">Reunião</option>
                 <option value="Aviso">Aviso</option>
@@ -321,32 +503,20 @@ Calendário do Centro
                 <option value="Outros">Outros</option>
             </select>
 
-            <p>Título</p>
-
+            <label class="campo-label">Título</label>
             <input type="text" name="titulo" required>
 
-            <p>Descrição</p>
+            <label class="campo-label">Descrição</label>
+            <textarea name="descricao" rows="4"></textarea>
 
-            <textarea
-                name="descricao"
-                rows="4"
-            ></textarea>
+            <div class="campo-checkbox">
+                <input type="checkbox" name="nao_letivo" id="nao_letivo">
+                <label for="nao_letivo">Dia não letivo</label>
+            </div>
 
-            <p>
-
-                <input
-                    type="checkbox"
-                    name="nao_letivo"
-                    style="width:auto;"
-                >
-
-                Dia não letivo
-
-            </p>
-
-            <button type="submit">
-                Guardar Evento
-            </button>
+            <div class="rodape-form">
+                <button type="submit">Guardar Evento</button>
+            </div>
 
         </form>
 
@@ -354,162 +524,250 @@ Calendário do Centro
 
 </div>
 
-<br>
-
+{# ── Todos os Registos ──────────────────────────────────────────────────── #}
 <div class="card">
 
-    <h2>
-        Todos os Registos
-    </h2>
+    <h3>Todos os Registos</h3>
 
-    <br>
+    {# ── DESKTOP: tabela ── #}
+    <div class="tabela-desktop table-responsive">
 
-    <div class="table-responsive">
+        <table class="tabela-registos">
 
-    <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Título</th>
+                    <th>Não Letivo</th>
+                    <th>Descrição</th>
+                    <th>Editar</th>
+                    <th>Apagar</th>
+                </tr>
+            </thead>
 
-        <thead>
+            <tbody>
 
-            <tr>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th>Título</th>
-                <th>Não Letivo</th>
-                <th>Descrição</th>
-                <th>Editar</th>
-                <th>Apagar</th>
-            </tr>
+            {% for evento in lista_eventos %}
 
-        </thead>
+                <tr>
 
-        <tbody>
+                    <td>{{ evento.data }}</td>
+
+                    <td>
+                        <span
+                            class="badge-tipo"
+                            style="background:{{ cores_tipo.get(evento.tipo, '#e5e7eb') }};"
+                        >
+                            {{ evento.tipo|replace("Evento", "Teste") }}
+                        </span>
+                    </td>
+
+                    <td>{{ evento.titulo }}</td>
+
+                    <td>
+                        {% if evento.nao_letivo %}
+                            Sim
+                        {% else %}
+                            Não
+                        {% endif %}
+                    </td>
+
+                    <td>{{ evento.descricao }}</td>
+
+                    <td>
+                        <a href="/calendario/editar/{{ evento.id }}" class="btn-acao btn-acao-editar">
+                            Editar
+                        </a>
+                    </td>
+
+                    <td>
+                        <a
+                            href="/calendario/apagar/{{ evento.id }}"
+                            onclick="return confirm('Deseja apagar este registo?');"
+                            class="btn-acao btn-acao-apagar"
+                        >
+                            Apagar
+                        </a>
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            {% for teste in lista_testes %}
+
+                <tr>
+
+                    <td>{{ teste.data_teste }}</td>
+
+                    <td>
+                        <span
+                            class="badge-tipo"
+                            style="background:{{ cores_tipo.get('Teste') }};"
+                        >
+                            Teste
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ teste.disciplina }} -
+                        {{ teste.escola }} -
+                        Turma {{ teste.turma }}
+                    </td>
+
+                    <td>Não</td>
+
+                    <td>
+                        {{ teste.matriz }}
+                        {% if teste.observacoes %}
+                            <br>
+                            {{ teste.observacoes }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a href="/testes/editar/{{ teste.id }}" class="btn-acao btn-acao-editar">
+                            Editar
+                        </a>
+                    </td>
+
+                    <td>
+                        <a
+                            href="/testes/apagar/{{ teste.id }}"
+                            onclick="return confirm('Apagar este teste?');"
+                            class="btn-acao btn-acao-apagar"
+                        >
+                            Apagar
+                        </a>
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {# ── MOBILE: cards ── #}
+    <div class="cards-mobile">
 
         {% for evento in lista_eventos %}
 
-            <tr>
+            <div class="registo-card">
 
-                <td>
-                    {{ evento.data }}
-                </td>
+                <div class="registo-card-grid">
 
-                <td>
+                    <div class="full">
+                        <div class="registo-label">Data</div>
+                        <div class="registo-valor">{{ evento.data }}</div>
+                    </div>
 
-                    <span
-                        style="
-                            background:
-                            {{ cores_tipo.get(evento.tipo, '#e5e7eb') }};
-                            color:white;
-                            padding:4px 8px;
-                            border-radius:4px;
-                        "
-                    >
-                        {{ evento.tipo|replace("Evento", "Teste") }}
-                    </span>
+                    <div>
+                        <div class="registo-label">Tipo</div>
+                        <div class="registo-valor">
+                            <span
+                                class="badge-tipo"
+                                style="background:{{ cores_tipo.get(evento.tipo, '#e5e7eb') }};"
+                            >
+                                {{ evento.tipo|replace("Evento", "Teste") }}
+                            </span>
+                        </div>
+                    </div>
 
-                </td>
+                    <div>
+                        <div class="registo-label">Não Letivo</div>
+                        <div class="registo-valor">
+                            {% if evento.nao_letivo %}Sim{% else %}Não{% endif %}
+                        </div>
+                    </div>
 
-                <td>
-                    {{ evento.titulo }}
-                </td>
+                    <div class="full">
+                        <div class="registo-label">Título</div>
+                        <div class="registo-valor">{{ evento.titulo }}</div>
+                    </div>
 
-                <td>
+                    <div class="full">
+                        <div class="registo-label">Descrição</div>
+                        <div class="registo-valor">{{ evento.descricao }}</div>
+                    </div>
 
-                    {% if evento.nao_letivo %}
-                        Sim
-                    {% else %}
-                        Não
-                    {% endif %}
+                </div>
 
-                </td>
-
-                <td>
-                    {{ evento.descricao }}
-                </td>
-
-                <td>
-
-                    <a
-                        href="/calendario/editar/{{ evento.id }}"
-                    >
-                        Editar
-                    </a>
-
-                </td>
-
-                <td>
-
+                <div class="registo-card-acoes">
+                    <a href="/calendario/editar/{{ evento.id }}" class="btn-acao btn-acao-editar">Editar</a>
                     <a
                         href="/calendario/apagar/{{ evento.id }}"
                         onclick="return confirm('Deseja apagar este registo?');"
-                        style="color:red;"
+                        class="btn-acao btn-acao-apagar"
                     >
                         Apagar
                     </a>
+                </div>
 
-                </td>
-
-            </tr>
+            </div>
 
         {% endfor %}
 
         {% for teste in lista_testes %}
 
-            <tr>
+            <div class="registo-card">
 
-                <td>{{ teste.data_teste }}</td>
+                <div class="registo-card-grid">
 
-                <td>
-                    <span
-                        style="
-                            background:{{ cores_tipo.get('Teste') }};
-                            color:white;
-                            padding:4px 8px;
-                            border-radius:4px;
-                        "
-                    >
-                        Teste
-                    </span>
-                </td>
+                    <div class="full">
+                        <div class="registo-label">Data</div>
+                        <div class="registo-valor">{{ teste.data_teste }}</div>
+                    </div>
 
-                <td>
-                    {{ teste.disciplina }} -
-                    {{ teste.escola }} -
-                    Turma {{ teste.turma }}
-                </td>
+                    <div>
+                        <div class="registo-label">Tipo</div>
+                        <div class="registo-valor">
+                            <span class="badge-tipo" style="background:{{ cores_tipo.get('Teste') }};">
+                                Teste
+                            </span>
+                        </div>
+                    </div>
 
-                <td>Não</td>
+                    <div>
+                        <div class="registo-label">Não Letivo</div>
+                        <div class="registo-valor">Não</div>
+                    </div>
 
-                <td>
-                    {{ teste.matriz }}
-                    {% if teste.observacoes %}
-                        <br>
-                        {{ teste.observacoes }}
-                    {% endif %}
-                </td>
+                    <div class="full">
+                        <div class="registo-label">Título</div>
+                        <div class="registo-valor">
+                            {{ teste.disciplina }} - {{ teste.escola }} - Turma {{ teste.turma }}
+                        </div>
+                    </div>
 
-                <td>
-                    <a href="/testes/editar/{{ teste.id }}">
-                        Editar
-                    </a>
-                </td>
+                    <div class="full">
+                        <div class="registo-label">Descrição</div>
+                        <div class="registo-valor">
+                            {{ teste.matriz }}
+                            {% if teste.observacoes %}<br>{{ teste.observacoes }}{% endif %}
+                        </div>
+                    </div>
 
-                <td>
+                </div>
+
+                <div class="registo-card-acoes">
+                    <a href="/testes/editar/{{ teste.id }}" class="btn-acao btn-acao-editar">Editar</a>
                     <a
                         href="/testes/apagar/{{ teste.id }}"
                         onclick="return confirm('Apagar este teste?');"
-                        style="color:red;"
+                        class="btn-acao btn-acao-apagar"
                     >
                         Apagar
                     </a>
-                </td>
+                </div>
 
-            </tr>
+            </div>
 
         {% endfor %}
-
-        </tbody>
-
-    </table>
 
     </div>
 
