@@ -32,7 +32,7 @@ from reportlab.graphics import renderPDF
 
 import qrcode
 import os
-from datetime import date
+from datetime import date, timedelta
 
 
 alunos_bp = Blueprint(
@@ -394,9 +394,40 @@ def ver_aluno(id):
         Teste.data_teste >= hoje
     ).order_by(Teste.data_teste.asc()).all()
 
-    total_horas = sum(
-        (f.duracao_horas or 0) for f in aluno.frequencias
-    )
+    # --------------------------------------------------
+    # HORAS DA SEMANA ATUAL
+    # --------------------------------------------------
+
+    # Calcular o início da semana atual (segunda-feira)
+    hoje_date = date.today()
+    inicio_semana = hoje_date - timedelta(days=hoje_date.weekday())
+
+    # Somar apenas as frequências desta semana
+    # As datas estão guardadas como string no formato "dd/mm/yyyy"
+    total_horas_semana = 0.0
+
+    for f in aluno.frequencias:
+        data_str = str(f.data or "").strip()
+        if not data_str:
+            continue
+        try:
+            from datetime import datetime
+            data_freq = datetime.strptime(data_str, "%d/%m/%Y").date()
+            if data_freq >= inicio_semana:
+                total_horas_semana += (f.duracao_horas or 0)
+        except ValueError:
+            # Se o formato não corresponder, ignorar esta frequência
+            continue
+
+    # Calcular saldo: pacote semanal menos horas já estudadas esta semana
+    pacote = float(aluno.pacote_horas or 0)
+    saldo_horas = max(0, pacote - total_horas_semana)
+
+    # Arredondar para evitar casas decimais excessivas
+    total_horas_semana = round(total_horas_semana, 2)
+    saldo_horas = round(saldo_horas, 2)
+
+    # --------------------------------------------------
 
     labels_grafico, disciplinas = preparar_dados_grafico(notas)
 
@@ -468,7 +499,8 @@ def ver_aluno(id):
         aluno=aluno,
         notas=notas,
         proximos_testes=proximos_testes,
-        total_horas=total_horas,
+        total_horas=total_horas_semana,
+        saldo_horas=saldo_horas,
         labels_grafico=labels_grafico,
         disciplinas=disciplinas,
         medias=medias,
