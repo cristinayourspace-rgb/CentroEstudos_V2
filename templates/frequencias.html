@@ -6,6 +6,57 @@ Frequências
 
 {% block conteudo %}
 
+{% if session.get('perfil') in ['administrador', 'administrador_geral'] %}
+
+<style>
+.btn-encerrar-todos {
+    background:#dc2626;
+    color:#ffffff;
+    border:none;
+    padding:14px 24px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(220,38,38,0.25);
+    transition:background 0.2s ease;
+    white-space:nowrap;
+}
+.btn-encerrar-todos:hover {
+    background:#b91c1c;
+}
+@media (max-width: 640px) {
+    .encerrar-todos-wrapper {
+        width:100%;
+    }
+    .btn-encerrar-todos {
+        width:100%;
+    }
+}
+</style>
+
+<div
+    class="encerrar-todos-wrapper"
+    style="
+        display:flex;
+        justify-content:flex-end;
+        margin-bottom:16px;
+    "
+>
+    <form
+        method="POST"
+        action="{{ url_for('frequencias.encerrar_todos_frequencias') }}"
+        onsubmit="return confirm('Tem a certeza que pretende encerrar todas as frequências em aberto?');"
+        style="margin:0;"
+    >
+        <button type="submit" class="btn-encerrar-todos">
+            Encerrar Todos os Alunos em Estudo
+        </button>
+    </form>
+</div>
+
+{% endif %}
+
 <div
     style="
         display:grid;

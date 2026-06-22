@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from datetime import datetime
 from urllib.parse import quote
 
@@ -337,4 +337,87 @@ def finalizar_frequencia(
         "finalizar_frequencia.html",
         frequencia=frequencia,
         aluno=aluno
+    )
+
+
+@frequencias_bp.route(
+    "/frequencias/encerrar-todos",
+    methods=["POST"]
+)
+def encerrar_todos_frequencias():
+
+    if session.get("perfil") not in [
+        "administrador",
+        "administrador_geral"
+    ]:
+
+        return render_template(
+            "acesso_negado.html"
+        )
+
+    abertas = Frequencia.query.filter_by(
+        hora_saida=None
+    ).all()
+
+    if not abertas:
+
+        flash(
+            "Nenhuma frequência em aberto encontrada."
+        )
+
+        return redirect(
+            url_for("frequencias.frequencias")
+        )
+
+    total_encerradas = 0
+
+    for frequencia in abertas:
+
+        aluno = frequencia.aluno
+
+        # --------------------------------------------------
+        # MESMA LÓGICA DE finalizar_frequencia()
+        # PARA hora_saida, duracao_horas E horas_restantes
+        # --------------------------------------------------
+
+        hora_saida = datetime.now()
+
+        entrada = datetime.strptime(
+            frequencia.hora_entrada,
+            "%H:%M"
+        )
+
+        saida = datetime.strptime(
+            hora_saida.strftime("%H:%M"),
+            "%H:%M"
+        )
+
+        duracao = (
+            saida - entrada
+        ).total_seconds() / 3600
+
+        frequencia.hora_saida = (
+            hora_saida.strftime("%H:%M")
+        )
+
+        frequencia.duracao_horas = round(
+            duracao,
+            2
+        )
+
+        aluno.horas_restantes = max(
+            0,
+            aluno.horas_restantes - duracao
+        )
+
+        total_encerradas += 1
+
+    db.session.commit()
+
+    flash(
+        f"Foram encerradas {total_encerradas} frequências em aberto."
+    )
+
+    return redirect(
+        url_for("frequencias.frequencias")
     )
