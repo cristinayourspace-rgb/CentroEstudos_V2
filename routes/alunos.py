@@ -567,10 +567,52 @@ def editar_aluno(id):
 @alunos_bp.route("/alunos/apagar/<int:id>", methods=["POST"])
 def apagar_aluno(id):
 
-    aluno = Aluno.query.get_or_404(id)
+    Aluno.query.get_or_404(id)
 
-    db.session.delete(aluno)
-    db.session.commit()
+    try:
+
+        db.session.execute(
+            aluno_necessidades.delete().where(
+                aluno_necessidades.c.aluno_id == id
+            )
+        )
+
+        db.session.execute(
+            aluno_objetivos.delete().where(
+                aluno_objetivos.c.aluno_id == id
+            )
+        )
+
+        Frequencia.query.filter_by(
+            aluno_id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        Nota.query.filter_by(
+            aluno_id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        Teste.query.filter_by(
+            aluno_id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        Aluno.query.filter_by(
+            id=id
+        ).delete(
+            synchronize_session=False
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+        raise
 
     return redirect("/alunos")
 
