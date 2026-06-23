@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+{% if horario %}Editar Horário{% else %}Novo Horário{% endif %}
+{% endblock %}
+
+{% block conteudo %}
+
+<style>
+
+    .pagina-header{ margin-bottom:24px; }
+    .pagina-header h2{
+        font-size:1.6rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 6px 0;
+    }
+    .pagina-header p{
+        color:#6b7280;
+        margin:0;
+    }
+
+    .campo-label{
+        display:block;
+        font-size:0.75rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:4px;
+        margin-top:12px;
+    }
+    .campo-label:first-of-type{ margin-top:0; }
+
+    .form-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:0 20px;
+    }
+
+    @media (min-width:640px){
+        .form-grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    .rodape-form{
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+        margin-top:18px;
+    }
+
+    @media (max-width:640px){
+        .rodape-form{ flex-direction:column-reverse; }
+        .rodape-form button,
+        .rodape-form a{ width:100%; text-align:center; }
+    }
+
+    .btn-cancelar{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        background:#f3f4f6;
+        color:#374151;
+        border-radius:12px;
+        padding:12px 20px;
+        font-weight:600;
+        text-decoration:none;
+    }
+    .btn-cancelar:hover{ background:#e5e7eb; }
+
+</style>
+
+<div class="pagina-header">
+    <h2>
+        {% if horario %}Editar Horário{% else %}Novo Horário{% endif %}
+    </h2>
+    <p>
+        Defina o horário semanal de uma turma. Este horário será
+        automaticamente visível para todos os alunos dessa turma.
+    </p>
+</div>
+
+<div class="card">
+
+    <form method="POST">
+
+        <div class="form-grid">
+
+            <div>
+                <label class="campo-label">Centro Escolar</label>
+                <input
+                    type="text"
+                    name="centro_escolar"
+                    list="lista-escolas"
+                    value="{{ horario.centro_escolar if horario else '' }}"
+                    required
+                >
+
+                <datalist id="lista-escolas">
+                    {% for escola in escolas %}
+                        <option value="{{ escola }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <div>
+                <label class="campo-label">Turma</label>
+                <input
+                    type="text"
+                    name="turma"
+                    list="lista-turmas"
+                    value="{{ horario.turma if horario else '' }}"
+                    required
+                >
+
+                <datalist id="lista-turmas">
+                    {% for turma in turmas %}
+                        <option value="{{ turma }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <div>
+                <label class="campo-label">Dia da Semana</label>
+                <select name="dia_semana" required>
+
+                    {% for dia in dias_semana %}
+                        <option
+                            value="{{ dia }}"
+                            {% if horario and horario.dia_semana == dia %}selected{% endif %}
+                        >
+                            {{ dia }}
+                        </option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <div>
+                <label class="campo-label">Disciplina</label>
+                <input
+                    type="text"
+                    name="disciplina"
+                    value="{{ horario.disciplina if horario else '' }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label class="campo-label">Hora Início</label>
+                <input
+                    type="time"
+                    name="hora_inicio"
+                    value="{{ horario.hora_inicio if horario else '' }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label class="campo-label">Hora Fim</label>
+                <input
+                    type="time"
+                    name="hora_fim"
+                    value="{{ horario.hora_fim if horario else '' }}"
+                    required
+                >
+            </div>
+
+        </div>
+
+        <div class="rodape-form">
+
+            <a href="{{ url_for('horarios.horarios') }}" class="btn-cancelar">
+                Cancelar
+            </a>
+
+            <button type="submit">
+                Guardar
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

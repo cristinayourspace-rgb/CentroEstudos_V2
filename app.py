@@ -20,6 +20,7 @@ from models.frequencia import Frequencia
 from models.teste import Teste
 from models.evento import Evento
 from models.configuracao_centro import ConfiguracaoCentro
+from models.horario_turma import HorarioTurma
 
 from routes.alunos import alunos_bp
 from routes.frequencias import frequencias_bp
@@ -29,6 +30,7 @@ from routes.testes import testes_bp
 from routes.calendario import calendario_bp
 from routes.admins import admins_bp
 from routes.configuracoes import configuracoes_bp
+from routes.horarios import horarios_bp
 
 app = Flask(__name__)
 
@@ -61,6 +63,7 @@ app.register_blueprint(testes_bp)
 app.register_blueprint(calendario_bp)
 app.register_blueprint(admins_bp)
 app.register_blueprint(configuracoes_bp)
+app.register_blueprint(horarios_bp)
 def e_admin_geral():
     return session.get("perfil") == "administrador_geral"
 

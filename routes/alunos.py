@@ -20,6 +20,7 @@ from models.nota import Nota
 from models.teste import Teste
 
 from models.configuracao_centro import ConfiguracaoCentro
+from models.horario_turma import HorarioTurma
 
 from io import BytesIO
 
@@ -494,6 +495,31 @@ def ver_aluno(id):
             }
         )
 
+    # --------------------------------------------------
+    # HORÁRIO ESCOLAR DA TURMA
+    # --------------------------------------------------
+    # O horário NÃO pertence ao aluno — pertence à turma.
+    # Aqui apenas se procura, pela escola + turma do aluno,
+    # o horário já existente para essa turma (sem duplicar
+    # nada por aluno).
+
+    horarios_turma = HorarioTurma.query.filter_by(
+        centro_escolar=aluno.escola,
+        turma=aluno.turma
+    ).all()
+
+    horarios_turma.sort(
+        key=lambda h: (h.ordem_dia(), h.hora_inicio)
+    )
+
+    horario_por_dia = {}
+
+    for h in horarios_turma:
+
+        horario_por_dia.setdefault(
+            h.dia_semana, []
+        ).append(h)
+
     return render_template(
         "ver_aluno.html",
         aluno=aluno,
@@ -505,6 +531,7 @@ def ver_aluno(id):
         disciplinas=disciplinas,
         medias=medias,
         datasets_grafico=datasets_grafico,
+        horario_por_dia=horario_por_dia,
     )
 
 

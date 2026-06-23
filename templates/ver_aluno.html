@@ -113,6 +113,61 @@ Ficha do Aluno
         height    : auto !important;
     }
 
+    /* --- secção Horário Escolar (cartões por dia da semana) -------------- */
+    .horario-dias-grid{
+        display               : grid;
+        grid-template-columns : 1fr;
+        gap                   : 14px;
+    }
+
+    @media (min-width: 640px){
+        .horario-dias-grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 1024px){
+        .horario-dias-grid{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    .horario-dia-card{
+        background    : #ffffff;
+        border        : 1px solid #e5e7eb;
+        border-radius : 14px;
+        box-shadow    : 0 4px 14px rgba(0, 0, 0, 0.05);
+        padding       : 16px 18px;
+    }
+
+    .horario-dia-titulo{
+        font-size      : 0.78rem;
+        font-weight    : 700;
+        color          : #2563eb;
+        text-transform : uppercase;
+        letter-spacing : 0.05em;
+        margin         : 0 0 12px 0;
+        padding-bottom : 8px;
+        border-bottom  : 1px solid #f1f5f9;
+    }
+
+    .horario-item{
+        margin-bottom : 10px;
+    }
+
+    .horario-item:last-child{
+        margin-bottom : 0;
+    }
+
+    .horario-item-hora{
+        font-size   : 0.78rem;
+        font-weight : 700;
+        color       : #9ca3af;
+    }
+
+    .horario-item-disciplina{
+        font-size   : 0.92rem;
+        font-weight : 600;
+        color       : #1f2937;
+        margin-top  : 2px;
+    }
+
 </style>
 
 {# ══════════════════════════════════════════════════════════════════════════
@@ -250,6 +305,52 @@ Ficha do Aluno
         </a>
 
     </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════
+   HORÁRIO ESCOLAR — pertence à TURMA, não ao aluno.
+   Apresentado automaticamente com base na escola + turma do aluno.
+   ══════════════════════════════════════════════════════════════════════════ #}
+<div class="bg-white rounded-2xl shadow-md p-5 md:p-6 mb-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">📅 Horário Escolar</h2>
+
+    {% if horario_por_dia %}
+
+        <div class="horario-dias-grid">
+
+            {% for dia, itens in horario_por_dia.items() %}
+
+                <div class="horario-dia-card">
+
+                    <h3 class="horario-dia-titulo">{{ dia }}</h3>
+
+                    {% for item in itens %}
+
+                        <div class="horario-item">
+                            <div class="horario-item-hora">
+                                {{ item.intervalo_formatado() }}
+                            </div>
+                            <div class="horario-item-disciplina">
+                                {{ item.disciplina }}
+                            </div>
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <p class="text-gray-500 text-sm">
+            Ainda não existe um horário definido para esta turma.
+        </p>
+
+    {% endif %}
+
 </div>
 
 {# ══════════════════════════════════════════════════════════════════════════

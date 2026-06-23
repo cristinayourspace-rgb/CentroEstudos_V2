@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Horários Escolares
+{% endblock %}
+
+{% block conteudo %}
+
+{# ══════════════════════════════════════════════════════════════════════════
+   ESTILOS — CSS próprio (sem Tailwind), consistente com calendario.html
+   ══════════════════════════════════════════════════════════════════════════ #}
+<style>
+
+    .pagina-header{ margin-bottom:24px; }
+    .pagina-header h2{
+        font-size:1.6rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 6px 0;
+    }
+    .pagina-header p{
+        color:#6b7280;
+        margin:0;
+    }
+
+    .pagina-header-topo{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        flex-wrap:wrap;
+        gap:14px;
+    }
+
+    .btn-novo{
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        background:#2563eb;
+        color:white;
+        border-radius:12px;
+        padding:11px 20px;
+        font-size:0.9rem;
+        font-weight:600;
+        text-decoration:none;
+        white-space:nowrap;
+        transition:opacity 0.15s;
+    }
+    .btn-novo:hover{ opacity:0.9; }
+
+    @media (max-width:480px){
+        .btn-novo{ width:100%; justify-content:center; }
+    }
+
+    /* ── Cartão por Centro Escolar ─────────────────────────────────────── */
+    .escola-bloco{ margin-bottom:28px; }
+
+    .escola-titulo{
+        font-size:1.1rem;
+        font-weight:700;
+        color:#1f2937;
+        margin:0 0 14px 0;
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+
+    /* ── Cartão por Turma ─────────────────────────────────────────────── */
+    .turma-card{
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:16px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.05);
+        padding:18px 20px;
+        margin-bottom:16px;
+    }
+
+    .turma-titulo{
+        font-size:0.95rem;
+        font-weight:700;
+        color:#2563eb;
+        text-transform:uppercase;
+        letter-spacing:0.04em;
+        margin:0 0 14px 0;
+    }
+
+    /* ── Tabela de horários (desktop) ─────────────────────────────────── */
+    .tabela-desktop{ display:none; }
+    .cards-mobile{ display:flex; flex-direction:column; gap:10px; }
+
+    @media (min-width:768px){
+        .tabela-desktop{ display:block; }
+        .cards-mobile{ display:none; }
+    }
+
+    .tabela-horarios{
+        width:100%;
+        border-collapse:collapse;
+        font-size:0.88rem;
+    }
+
+    .tabela-horarios thead th{
+        text-align:left;
+        font-size:0.72rem;
+        font-weight:700;
+        color:#6b7280;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        padding:8px 12px;
+        border-bottom:2px solid #e5e7eb;
+        white-space:nowrap;
+    }
+
+    .tabela-horarios tbody td{
+        padding:10px 12px;
+        border-bottom:1px solid #f1f1f1;
+        color:#1f2937;
+    }
+
+    .tabela-horarios tbody tr:hover td{
+        background:#f9fafb;
+    }
+
+    /* ── Cards mobile ─────────────────────────────────────────────────── */
+    .horario-card-item{
+        background:#f9fafb;
+        border:1px solid #e5e7eb;
+        border-radius:12px;
+        padding:14px 16px;
+    }
+
+    .horario-card-topo{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:6px;
+    }
+
+    .horario-dia{
+        font-size:0.72rem;
+        font-weight:700;
+        color:#9ca3af;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+    }
+
+    .horario-hora{
+        font-size:0.85rem;
+        font-weight:700;
+        color:#2563eb;
+    }
+
+    .horario-disciplina{
+        font-size:0.95rem;
+        font-weight:600;
+        color:#1f2937;
+        margin-bottom:10px;
+    }
+
+    .horario-card-acoes{
+        display:flex;
+        gap:8px;
+    }
+
+    /* ── Botões de ação ───────────────────────────────────────────────── */
+    .btn-acao{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:0.78rem;
+        font-weight:600;
+        padding:6px 14px;
+        border-radius:8px;
+        text-decoration:none;
+        white-space:nowrap;
+        transition:background 0.15s;
+        border:1px solid transparent;
+    }
+    .btn-acao-editar{
+        background:#eff6ff;
+        color:#2563eb;
+        border-color:#bfdbfe;
+    }
+    .btn-acao-editar:hover{ background:#dbeafe; }
+
+    .btn-acao-apagar{
+        background:#fef2f2;
+        color:#ef4444;
+        border-color:#fecaca;
+    }
+    .btn-acao-apagar:hover{ background:#fee2e2; }
+
+    .lista-acoes{ display:flex; gap:8px; }
+
+    .sem-horarios{
+        color:#6b7280;
+        font-size:0.9rem;
+    }
+
+</style>
+
+{# ── Cabeçalho da página ──────────────────────────────────────────────── #}
+<div class="pagina-header">
+    <div class="pagina-header-topo">
+
+        <div>
+            <h2>Horários Escolares</h2>
+            <p>Gestão dos horários semanais por turma</p>
+        </div>
+
+        <a href="{{ url_for('horarios.novo_horario') }}" class="btn-novo">
+            + Novo Horário
+        </a>
+
+    </div>
+</div>
+
+{% if agrupados %}
+
+    {% for escola, turmas in agrupados.items() %}
+
+        <div class="escola-bloco">
+
+            <h3 class="escola-titulo">
+                🏫 {{ escola }}
+            </h3>
+
+            {% for turma, lista in turmas.items() %}
+
+                <div class="turma-card">
+
+                    <h4 class="turma-titulo">
+                        Turma {{ turma }}
+                    </h4>
+
+                    {# ── DESKTOP: tabela ── #}
+                    <div class="tabela-desktop table-responsive">
+
+                        <table class="tabela-horarios">
+
+                            <thead>
+                                <tr>
+                                    <th>Dia</th>
+                                    <th>Hora</th>
+                                    <th>Disciplina</th>
+                                    <th>Editar</th>
+                                    <th>Eliminar</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                            {% for h in lista %}
+
+                                <tr>
+
+                                    <td>{{ h.dia_semana }}</td>
+
+                                    <td>{{ h.intervalo_formatado() }}</td>
+
+                                    <td>{{ h.disciplina }}</td>
+
+                                    <td>
+                                        <a
+                                            href="{{ url_for('horarios.editar_horario', id=h.id) }}"
+                                            class="btn-acao btn-acao-editar"
+                                        >
+                                            Editar
+                                        </a>
+                                    </td>
+
+                                    <td>
+                                        <a
+                                            href="{{ url_for('horarios.eliminar_horario', id=h.id) }}"
+                                            onclick="return confirm('Eliminar este horário?');"
+                                            class="btn-acao btn-acao-apagar"
+                                        >
+                                            Eliminar
+                                        </a>
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    {# ── MOBILE: cards ── #}
+                    <div class="cards-mobile">
+
+                        {% for h in lista %}
+
+                            <div class="horario-card-item">
+
+                                <div class="horario-card-topo">
+                                    <span class="horario-dia">{{ h.dia_semana }}</span>
+                                    <span class="horario-hora">{{ h.intervalo_formatado() }}</span>
+                                </div>
+
+                                <div class="horario-disciplina">
+                                    {{ h.disciplina }}
+                                </div>
+
+                                <div class="horario-card-acoes">
+
+                                    <a
+                                        href="{{ url_for('horarios.editar_horario', id=h.id) }}"
+                                        class="btn-acao btn-acao-editar"
+                                    >
+                                        Editar
+                                    </a>
+
+                                    <a
+                                        href="{{ url_for('horarios.eliminar_horario', id=h.id) }}"
+                                        onclick="return confirm('Eliminar este horário?');"
+                                        class="btn-acao btn-acao-apagar"
+                                    >
+                                        Eliminar
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endfor %}
+
+{% else %}
+
+    <div class="card">
+        <p class="sem-horarios">
+            Ainda não existem horários criados. Clique em
+            "+ Novo Horário" para adicionar o primeiro.
+        </p>
+    </div>
+
+{% endif %}
+
+{% endblock %}
