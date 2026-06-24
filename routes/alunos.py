@@ -72,6 +72,25 @@ def texto_normalizado(valor):
     return str(valor or "").strip().lower()
 
 
+def gerar_qrcode(codigo):
+    """
+    Gera (ou regenera) o ficheiro static/qrcodes/<codigo>.png.
+    Silencioso: não lança excepções — em caso de erro regista apenas
+    no stderr para não interromper o fluxo normal da aplicação.
+    """
+    try:
+        pasta = os.path.join("static", "qrcodes")
+        os.makedirs(pasta, exist_ok=True)
+
+        caminho = os.path.join(pasta, f"{codigo}.png")
+
+        qr = qrcode.make(codigo)
+        qr.save(caminho)
+    except Exception as e:
+        import sys
+        print(f"[AVISO] Não foi possível gerar o QR Code para {codigo}: {e}", file=sys.stderr)
+
+
 def preparar_dados_grafico(notas):
     notas = sorted(
         notas,
@@ -352,6 +371,9 @@ def listar_alunos():
         db.session.add(aluno)
         db.session.commit()
 
+        # CORREÇÃO 1 — gerar QR Code do novo aluno imediatamente
+        gerar_qrcode(aluno.codigo)
+
         return redirect(
             f"/alunos/ver/{aluno.id}"
         )
@@ -384,6 +406,11 @@ def listar_alunos():
 def ver_aluno(id):
 
     aluno = Aluno.query.get_or_404(id)
+
+    # CORREÇÃO 2 — garantir que o QR Code existe (recuperação silenciosa)
+    caminho_qr = os.path.join("static", "qrcodes", f"{aluno.codigo}.png")
+    if not os.path.exists(caminho_qr):
+        gerar_qrcode(aluno.codigo)
 
     notas = Nota.query.filter_by(
         aluno_id=aluno.id
