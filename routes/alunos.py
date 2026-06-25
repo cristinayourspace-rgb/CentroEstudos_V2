@@ -22,6 +22,7 @@ from models.teste import Teste
 from models.configuracao_centro import ConfiguracaoCentro
 from models.horario_turma import HorarioTurma
 
+from collections import OrderedDict
 from io import BytesIO
 
 from reportlab.lib.pagesizes import A4
@@ -378,20 +379,42 @@ def listar_alunos():
             f"/alunos/ver/{aluno.id}"
         )
     
-    alunos_agrupados = {}
+    # ------------------------------------------------------------------
+    # AGRUPAMENTO COM ORDENAÇÃO CONSISTENTE
+    # 1. Agrupamento temporário
+    # 2. Ordenar escolas alfabeticamente
+    # 3. Ordenar turmas alfabeticamente dentro de cada escola
+    # 4. Ordenar alunos alfabeticamente pelo nome dentro de cada turma
+    # 5. Construir alunos_agrupados final com OrderedDict
+    # ------------------------------------------------------------------
+
+    agrupamento_temp = {}
 
     for aluno in alunos:
 
         escola = aluno.escola or "Sem Escola"
         turma = aluno.turma or "Sem Turma"
 
-        if escola not in alunos_agrupados:
-            alunos_agrupados[escola] = {}
+        if escola not in agrupamento_temp:
+            agrupamento_temp[escola] = {}
 
-        if turma not in alunos_agrupados[escola]:
-            alunos_agrupados[escola][turma] = []
+        if turma not in agrupamento_temp[escola]:
+            agrupamento_temp[escola][turma] = []
 
-        alunos_agrupados[escola][turma].append(aluno)
+        agrupamento_temp[escola][turma].append(aluno)
+
+    alunos_agrupados = OrderedDict()
+
+    for escola in sorted(agrupamento_temp.keys()):
+
+        alunos_agrupados[escola] = OrderedDict()
+
+        for turma in sorted(agrupamento_temp[escola].keys()):
+
+            alunos_agrupados[escola][turma] = sorted(
+                agrupamento_temp[escola][turma],
+                key=lambda a: (a.nome or "").strip().lower()
+            )
 
     return render_template(
         "alunos.html",
