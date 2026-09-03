@@ -1,0 +1,45 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+ENV/
+
+# Base de dados local
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Backups
+backups/
+backup*/
+*_backup*
+*.bak
+
+# Ficheiros temporários e pacotes de trabalho
+*.zip
+*.tmp
+*.temp
+
+# Pastas criadas para aplicar atualizações
+Frequencias_Atualizacao/
+Frequencias_Correcao_Eliminar/
+CentroEstudos_V2/
+
+# Ficheiros de desenvolvimento/teste
+*.py.txt
+estrutura.txt
+teste_grafico.png
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
