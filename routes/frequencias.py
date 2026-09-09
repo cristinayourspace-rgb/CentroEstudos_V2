@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from datetime import datetime
+from datetime import datetime, time
 from urllib.parse import quote
 
 from models import db
@@ -12,6 +12,123 @@ frequencias_bp = Blueprint("frequencias", __name__)
 
 PRESENCA_MARKER = "PRESENÇA"
 ANULADO_MARKER = "[ANULADO]"
+
+# O "dia de trabalho" termina às 19:01.
+# Depois desse horário, as contagens do ecrã devem aparecer a zero.
+HORA_RESET_DIARIO = time(19, 1)
+
+
+def periodo_diario_atual(agora=None):
+    """Devolve a data contabilizada no ecrã ou None após as 19:01."""
+    agora = agora or datetime.now()
+
+    if agora.time() >= HORA_RESET_DIARIO:
+        return None
+
+    return agora.strftime("%d/%m/%Y")
+
+
+def eh_registo_do_dia_atual(frequencia, agora=None):
+    data_atual = periodo_diario_atual(agora)
+    return data_atual is not None and frequencia.data == data_atual
+
+
+def encerrar_sessoes_abertas_apos_reset(agora=None):
+    """
+    Fecha sessões de estudo que ficaram abertas quando o período diário terminou.
+    Não elimina histórico nem remove registos da base de dados.
+    A função é executada quando há uma nova utilização da aplicação.
+    """
+    agora = agora or datetime.now()
+    deve_encerrar = agora.time() >= HORA_RESET_DIARIO
+    data_atual = agora.strftime("%d/%m/%Y")
+
+    abertas = [
+        f for f in Frequencia.query.filter_by(hora_saida=None).all()
+        if eh_sessao_estudo_aberta(f)
+    ]
+
+    alterou = False
+
+    for frequencia in abertas:
+        # Uma sessão aberta de um dia anterior nunca pode continuar
+        # para o novo dia. Também fechamos às 19:00 quando o período
+        # diário termina, preservando sempre o histórico.
+        if not deve_encerrar and frequencia.data == data_atual:
+            continue
+
+        try:
+            entrada = datetime.strptime(
+                frequencia.hora_entrada,
+                "%H:%M"
+            )
+            saida_hora = "19:00"
+            saida = datetime.strptime(saida_hora, "%H:%M")
+            duracao = (saida - entrada).total_seconds() / 3600
+        except (TypeError, ValueError):
+            continue
+
+        if duracao < 0:
+            duracao = 0
+
+        frequencia.hora_saida = saida_hora
+        frequencia.duracao_horas = round(duracao, 2)
+
+        aluno = frequencia.aluno
+        aluno.horas_restantes = max(
+            0,
+            (aluno.horas_restantes or 0) - duracao
+        )
+
+        alterou = True
+
+    if alterou:
+        db.session.commit()
+
+
+def obter_resumo_diario():
+    """
+    Calcula exclusivamente as contagens apresentadas no Dashboard
+    e no cartão de resumo da página Frequências.
+
+    Os registos históricos permanecem intactos na base de dados.
+    """
+    agora = datetime.now()
+    data_atual = periodo_diario_atual(agora)
+
+    # Primeiro fechamos sessões que não podem continuar abertas.
+    # Às 19:01 o ecrã passa imediatamente a mostrar zero.
+    encerrar_sessoes_abertas_apos_reset(agora)
+
+    if data_atual is None:
+        return {
+            "em_estudo": 0,
+            "concluidos": 0,
+            "total": 0
+        }
+
+    registos_do_dia = Frequencia.query.filter_by(
+        data=data_atual
+    ).all()
+
+    registos_validos = [
+        f for f in registos_do_dia
+        if not esta_anulada(f)
+    ]
+
+    return {
+        "em_estudo": sum(
+            1 for f in registos_validos
+            if eh_sessao_estudo_aberta(f)
+        ),
+        "concluidos": sum(
+            1 for f in registos_validos
+            if f.hora_saida
+        ),
+        "total": len(registos_validos)
+    }
+
+
 
 
 def horas_para_hhmm(horas):
@@ -59,8 +176,13 @@ def obter_historico():
 
 
 def obter_aberta_do_aluno(aluno_id):
+    encerrar_sessoes_abertas_apos_reset()
+
+    data_atual = datetime.now().strftime("%d/%m/%Y")
+
     frequencias = Frequencia.query.filter_by(
         aluno_id=aluno_id,
+        data=data_atual,
         hora_saida=None
     ).order_by(Frequencia.id.desc()).all()
 
@@ -73,6 +195,9 @@ def obter_aberta_do_aluno(aluno_id):
 
 def dia_permite_frequencia():
     hoje = datetime.now()
+
+    if hoje.time() >= HORA_RESET_DIARIO:
+        return False, "O período diário encerrou às 19:01. Novos registos ficam disponíveis no dia seguinte."
 
     if hoje.weekday() in [5, 6]:
         return False, "Hoje é fim de semana."
@@ -107,22 +232,16 @@ def frequencias():
 
         if not permitido:
             historico = obter_historico()
-            em_estudo = sum(
-                1 for f in historico if eh_sessao_estudo_aberta(f)
-            )
-            concluidos = sum(
-                1 for f in historico
-                if not f.eh_presenca and not f.esta_anulada and f.hora_saida
-            )
+            resumo = obter_resumo_diario()
 
             return render_template(
                 "frequencias.html",
                 historico=historico,
                 mensagem=motivo,
                 whatsapp_link=None,
-                em_estudo=em_estudo,
-                concluidos=concluidos,
-                total=len(historico)
+                em_estudo=resumo["em_estudo"],
+                concluidos=resumo["concluidos"],
+                total=resumo["total"]
             )
 
         codigo = request.form.get("codigo", "").strip()
@@ -209,24 +328,16 @@ def frequencias():
                 )
 
     historico = obter_historico()
-
-    em_estudo = sum(
-        1 for f in historico if eh_sessao_estudo_aberta(f)
-    )
-
-    concluidos = sum(
-        1 for f in historico
-        if not f.eh_presenca and not f.esta_anulada and f.hora_saida
-    )
+    resumo = obter_resumo_diario()
 
     return render_template(
         "frequencias.html",
         historico=historico,
         mensagem=mensagem,
         whatsapp_link=whatsapp_link,
-        em_estudo=em_estudo,
-        concluidos=concluidos,
-        total=len(historico)
+        em_estudo=resumo["em_estudo"],
+        concluidos=resumo["concluidos"],
+        total=resumo["total"]
     )
 
 
@@ -235,6 +346,8 @@ def frequencias():
     methods=["GET", "POST"]
 )
 def finalizar_frequencia(frequencia_id):
+    encerrar_sessoes_abertas_apos_reset()
+
     frequencia = Frequencia.query.get_or_404(frequencia_id)
     aluno = frequencia.aluno
 
@@ -478,6 +591,8 @@ def encerrar_todos_frequencias():
         "administrador_geral"
     ]:
         return render_template("acesso_negado.html")
+
+    encerrar_sessoes_abertas_apos_reset()
 
     abertas = [
         f for f in Frequencia.query.filter_by(hora_saida=None).all()

@@ -23,7 +23,7 @@ from models.configuracao_centro import ConfiguracaoCentro
 from models.horario_turma import HorarioTurma
 
 from routes.alunos import alunos_bp
-from routes.frequencias import frequencias_bp
+from routes.frequencias import frequencias_bp, obter_resumo_diario
 from routes.notas import notas_bp
 from routes.turma import turma_bp
 from routes.testes import testes_bp
@@ -221,11 +221,10 @@ def inicio():
         ativo=True
     ).count()
 
-    alunos_em_estudo = Frequencia.query.filter_by(
-        hora_saida=None
-    ).count()
+    resumo_frequencias = obter_resumo_diario()
 
-    total_frequencias = Frequencia.query.count()
+    alunos_em_estudo = resumo_frequencias["em_estudo"]
+    total_frequencias = resumo_frequencias["total"]
 
     total_notas = Nota.query.count()
 
