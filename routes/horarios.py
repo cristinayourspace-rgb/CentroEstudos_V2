@@ -37,24 +37,23 @@ def chave_texto(valor):
 
 
 def chave_turma(valor):
-    """
-    Ordenação natural de turmas: 1, 2, 3, 10, 1A, 1B, 2A, etc.
-    As partes numéricas são comparadas numericamente e as textuais
-    alfabeticamente.
+    """Ordena turmas de forma natural: número primeiro e depois letras/texto.
+
+    Exemplos: 1, 2, 3, 5A, 5B, 5C, 5D, 5E, 10A.
+    Também funciona com turmas como "5 C" ou "5-C".
     """
 
     texto = chave_texto(valor)
-    partes = re.split(r"(\d+)", texto)
+    texto = re.sub(r"\s+", "", texto)
 
-    chave = []
+    correspondencia = re.match(r"^(\d+)(.*)$", texto)
 
-    for parte in partes:
-        if parte.isdigit():
-            chave.append((0, int(parte)))
-        else:
-            chave.append((1, parte))
+    if correspondencia:
+        numero = int(correspondencia.group(1))
+        complemento = re.sub(r"[^a-z0-9]+", "", correspondencia.group(2))
+        return (0, numero, complemento)
 
-    return chave
+    return (1, 0, texto)
 
 
 def obter_escolas_e_turmas():
