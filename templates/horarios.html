@@ -218,6 +218,41 @@ Horários Escolares
         margin:0;
     }
 
+    .alunos-turma{
+        margin-bottom:16px;
+        padding:12px 14px;
+        background:#f8fafc;
+        border:1px solid #e5e7eb;
+        border-radius:12px;
+    }
+
+    .alunos-turma-titulo{
+        margin:0 0 8px 0;
+        font-size:0.72rem;
+        font-weight:700;
+        color:#6b7280;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+    }
+
+    .alunos-turma-lista{
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px 10px;
+        margin:0;
+        padding:0;
+        list-style:none;
+    }
+
+    .aluno-turma-item{
+        font-size:0.86rem;
+        color:#374151;
+        background:white;
+        border:1px solid #e5e7eb;
+        border-radius:8px;
+        padding:5px 9px;
+    }
+
     /* ---------------------------------------------------------------
        MOBILE
        --------------------------------------------------------------- */
@@ -328,7 +363,7 @@ Horários Escolares
                 🏫 {{ escola }}
             </h3>
 
-            {% for turma, dias in turmas.items() %}
+            {% for turma, grupo in turmas.items() %}
 
                 <div class="turma-card">
 
@@ -339,8 +374,8 @@ Horários Escolares
                         </h4>
 
                         {% set primeiro_item = (
-                            dias.values()|list|first|first
-                            if dias
+                            grupo.dias.values()|list|first|first
+                            if grupo.dias
                             else None
                         ) %}
 
@@ -369,6 +404,28 @@ Horários Escolares
 
                     </div>
 
+                    {% if grupo.alunos %}
+
+                        <div class="alunos-turma">
+
+                            <p class="alunos-turma-titulo">Alunos da turma</p>
+
+                            <ul class="alunos-turma-lista">
+
+                                {% for aluno in grupo.alunos %}
+
+                                    <li class="aluno-turma-item">
+                                        {{ aluno.nome }}
+                                    </li>
+
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                    {% endif %}
+
                     <div class="tabela-wrapper">
 
                         <table class="tabela-horarios">
@@ -384,7 +441,7 @@ Horários Escolares
 
                             <tbody>
 
-                            {% for dia, itens in dias.items() %}
+                            {% for dia, itens in grupo.dias.items() %}
 
                                 <tr>
 
@@ -432,7 +489,7 @@ Horários Escolares
 
                     <div class="cards-mobile">
 
-                        {% for dia, itens in dias.items() %}
+                        {% for dia, itens in grupo.dias.items() %}
 
                             <div class="horario-dia-card">
 

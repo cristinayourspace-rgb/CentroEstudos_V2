@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import re
+import unicodedata
 
 from flask import (
     Blueprint,
@@ -27,23 +29,46 @@ horarios_bp = Blueprint(
 # HELPERS
 # ------------------------------------------------------------------
 
-def obter_escolas_e_turmas():
+def chave_texto(valor):
+    """Chave de ordenação alfabética robusta, ignorando maiúsculas/acentos."""
+
+    texto = (valor or "").strip().lower()
+    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+
+
+def chave_turma(valor):
     """
-    Alimenta os datalists de sugestão (Escola / Turma), a partir
-    dos alunos já existentes.
+    Ordenação natural de turmas: 1, 2, 3, 10, 1A, 1B, 2A, etc.
+    As partes numéricas são comparadas numericamente e as textuais
+    alfabeticamente.
     """
 
-    alunos = Aluno.query.order_by(
-        Aluno.escola,
-        Aluno.turma
-    ).all()
+    texto = chave_texto(valor)
+    partes = re.split(r"(\d+)", texto)
+
+    chave = []
+
+    for parte in partes:
+        if parte.isdigit():
+            chave.append((0, int(parte)))
+        else:
+            chave.append((1, parte))
+
+    return chave
+
+
+def obter_escolas_e_turmas():
+    """Alimenta os datalists de Escola e Turma já com a ordenação da página."""
+
+    alunos = Aluno.query.all()
 
     escolas = sorted(
         {
             aluno.escola.strip()
             for aluno in alunos
             if aluno.escola and aluno.escola.strip()
-        }
+        },
+        key=chave_texto
     )
 
     turmas = sorted(
@@ -51,80 +76,98 @@ def obter_escolas_e_turmas():
             aluno.turma.strip()
             for aluno in alunos
             if aluno.turma and aluno.turma.strip()
-        }
+        },
+        key=chave_turma
     )
 
     return escolas, turmas
 
 
-def agrupar_horarios(lista_horarios):
+def agrupar_horarios(lista_horarios, lista_alunos):
     """
-    Agrupa os registos por Centro Escolar -> Turma -> Dia da Semana.
+    Organiza os horários pela hierarquia:
+    Escola -> Turma -> Alunos + Dias.
 
-    A tabela da página apresenta uma linha por dia e coloca todas as
-    disciplinas desse dia numa única lista.
-
-    A estrutura da base de dados mantém-se inalterada:
-    existe um registo HorarioTurma por disciplina.
+    Escolas: ordem alfabética.
+    Turmas: ordem natural numérica e alfabética.
+    Alunos: ordem alfabética pelo nome.
+    Dias: ordem semanal definida em DIAS_SEMANA.
     """
 
-    agrupados = OrderedDict()
+    dados = {}
 
     for horario in lista_horarios:
 
-        escola = horario.centro_escolar or "Sem Centro Escolar"
-        turma = horario.turma or "Sem Turma"
+        escola = (horario.centro_escolar or "Sem Centro Escolar").strip()
+        turma = (horario.turma or "Sem Turma").strip()
+
+        dados.setdefault(escola, {})
+        dados[escola].setdefault(turma, {
+            "alunos": [],
+            "dias": OrderedDict()
+        })
+
         dia = horario.dia_semana
+        dados[escola][turma]["dias"].setdefault(dia, []).append(horario)
 
-        agrupados.setdefault(
-            escola, OrderedDict()
-        ).setdefault(
-            turma, OrderedDict()
-        ).setdefault(
-            dia,
-            []
-        ).append(horario)
+    # Acrescenta os alunos existentes da mesma Escola + Turma.
+    for aluno in lista_alunos:
 
-    for escola in agrupados:
+        escola = (aluno.escola or "Sem Escola").strip()
+        turma = (aluno.turma or "Sem Turma").strip()
 
-        for turma in agrupados[escola]:
+        if escola not in dados or turma not in dados[escola]:
+            continue
 
-            dias = agrupados[escola][turma]
+        dados[escola][turma]["alunos"].append(aluno)
 
+    escolas_ordenadas = OrderedDict()
+
+    for escola in sorted(dados.keys(), key=chave_texto):
+
+        turmas_ordenadas = OrderedDict()
+
+        for turma in sorted(dados[escola].keys(), key=chave_turma):
+
+            grupo = dados[escola][turma]
+
+            grupo["alunos"].sort(
+                key=lambda a: chave_texto(a.nome)
+            )
+
+            dias_originais = grupo["dias"]
             dias_ordenados = OrderedDict()
 
             for dia in DIAS_SEMANA:
 
-                if dia in dias:
-                    itens = dias[dia]
+                if dia in dias_originais:
 
+                    itens = dias_originais[dia]
                     itens.sort(
                         key=lambda h: (
                             h.hora_inicio or "",
-                            h.disciplina.lower() if h.disciplina else ""
+                            chave_texto(h.disciplina)
                         )
                     )
-
                     dias_ordenados[dia] = itens
 
-            # Preserva eventuais dias antigos/inválidos que possam
-            # existir na base, sem os perder.
-            for dia, itens in dias.items():
+            for dia, itens in dias_originais.items():
 
                 if dia not in dias_ordenados:
-
                     itens.sort(
                         key=lambda h: (
                             h.hora_inicio or "",
-                            h.disciplina.lower() if h.disciplina else ""
+                            chave_texto(h.disciplina)
                         )
                     )
-
                     dias_ordenados[dia] = itens
 
-            agrupados[escola][turma] = dias_ordenados
+            grupo["dias"] = dias_ordenados
+            turmas_ordenadas[turma] = grupo
 
-    return agrupados
+        escolas_ordenadas[escola] = turmas_ordenadas
+
+    return escolas_ordenadas
 
 
 def preparar_dados_para_formulario():
@@ -328,9 +371,11 @@ def obter_horario_turma(
 def horarios():
 
     lista_horarios = HorarioTurma.query.all()
+    lista_alunos = Aluno.query.all()
 
     agrupados = agrupar_horarios(
-        lista_horarios
+        lista_horarios,
+        lista_alunos
     )
 
     return render_template(
