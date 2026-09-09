@@ -82,6 +82,37 @@ with app.app_context():
 
     db.create_all()
 
+    # ------------------------------------------------------------------
+    # MIGRAÇÃO LEVE: garante que colunas novas existem em bases de dados
+    # já criadas anteriormente (db.create_all() não altera tabelas já
+    # existentes, apenas cria as que faltam).
+    # ------------------------------------------------------------------
+    try:
+        from sqlalchemy import inspect, text
+
+        inspetor = inspect(db.engine)
+        colunas_turmas = [
+            coluna["name"] for coluna in inspetor.get_columns("turmas")
+        ]
+
+        with db.engine.connect() as conexao:
+
+            if "escola" not in colunas_turmas:
+                conexao.execute(
+                    text("ALTER TABLE turmas ADD COLUMN escola VARCHAR(150)")
+                )
+
+            if "diretor_turma" not in colunas_turmas:
+                conexao.execute(
+                    text("ALTER TABLE turmas ADD COLUMN diretor_turma VARCHAR(150)")
+                )
+
+            conexao.commit()
+
+    except Exception as e:
+        import sys
+        print(f"[AVISO] Migração de 'turmas' não foi concluída: {e}", file=sys.stderr)
+
     configuracao = ConfiguracaoCentro.query.first()
 
     if not configuracao:

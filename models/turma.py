@@ -19,6 +19,14 @@ class Turma(db.Model):
         db.String(20)
     )
 
+    escola = db.Column(
+        db.String(150)
+    )
+
+    diretor_turma = db.Column(
+        db.String(150)
+    )
+
     observacoes = db.Column(
         db.Text
     )
