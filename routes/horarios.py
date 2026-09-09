@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from flask import (
     Blueprint,
     render_template,
@@ -27,9 +29,8 @@ horarios_bp = Blueprint(
 
 def obter_escolas_e_turmas():
     """
-    Mesma lógica usada em routes/calendario.py para alimentar
-    os datalists de sugestão (Escola / Turma), a partir dos
-    alunos já existentes.
+    Alimenta os datalists de sugestão (Escola / Turma), a partir
+    dos alunos já existentes.
     """
 
     alunos = Aluno.query.order_by(
@@ -58,35 +59,265 @@ def obter_escolas_e_turmas():
 
 def agrupar_horarios(lista_horarios):
     """
-    Agrupa os horários por Centro Escolar -> Turma -> lista
-    ordenada por dia da semana e hora de início.
+    Agrupa os registos por Centro Escolar -> Turma -> Dia da Semana.
+
+    A tabela da página apresenta uma linha por dia e coloca todas as
+    disciplinas desse dia numa única lista.
+
+    A estrutura da base de dados mantém-se inalterada:
+    existe um registo HorarioTurma por disciplina.
     """
 
-    agrupados = {}
+    agrupados = OrderedDict()
 
     for horario in lista_horarios:
 
         escola = horario.centro_escolar or "Sem Centro Escolar"
         turma = horario.turma or "Sem Turma"
+        dia = horario.dia_semana
 
         agrupados.setdefault(
-            escola, {}
+            escola, OrderedDict()
         ).setdefault(
-            turma, []
+            turma, OrderedDict()
+        ).setdefault(
+            dia,
+            []
         ).append(horario)
 
     for escola in agrupados:
 
         for turma in agrupados[escola]:
 
-            agrupados[escola][turma].sort(
+            dias = agrupados[escola][turma]
+
+            dias_ordenados = OrderedDict()
+
+            for dia in DIAS_SEMANA:
+
+                if dia in dias:
+                    itens = dias[dia]
+
+                    itens.sort(
+                        key=lambda h: (
+                            h.hora_inicio or "",
+                            h.disciplina.lower() if h.disciplina else ""
+                        )
+                    )
+
+                    dias_ordenados[dia] = itens
+
+            # Preserva eventuais dias antigos/inválidos que possam
+            # existir na base, sem os perder.
+            for dia, itens in dias.items():
+
+                if dia not in dias_ordenados:
+
+                    itens.sort(
+                        key=lambda h: (
+                            h.hora_inicio or "",
+                            h.disciplina.lower() if h.disciplina else ""
+                        )
+                    )
+
+                    dias_ordenados[dia] = itens
+
+            agrupados[escola][turma] = dias_ordenados
+
+    return agrupados
+
+
+def preparar_dados_para_formulario():
+    """
+    Reconstroi o estado dos dias a partir do POST, para que os dados
+    preenchidos permaneçam visíveis quando existir um erro de validação.
+    """
+
+    dados = {}
+
+    for indice, nome_dia in enumerate(DIAS_SEMANA):
+
+        if request.form.get(f"dia_ativo_{indice}") != "1":
+            continue
+
+        dados[nome_dia] = {
+            "hora_inicio": request.form.get(
+                f"hora_inicio_{indice}",
+                ""
+            ).strip(),
+
+            "hora_fim": request.form.get(
+                f"hora_fim_{indice}",
+                ""
+            ).strip(),
+
+            "disciplinas": [
+                disciplina.strip()
+                for disciplina in request.form.getlist(
+                    f"disciplinas_{indice}[]"
+                )
+            ]
+        }
+
+    return dados
+
+
+def recolher_dados_formulario():
+    """
+    Lê e valida o formulário semanal.
+
+    Para cada dia ativado podem existir várias disciplinas, mas apenas
+    um horário de entrada e um horário de saída para o dia.
+    """
+
+    dias = []
+    erros = []
+
+    for indice, nome_dia in enumerate(DIAS_SEMANA):
+
+        ativo = request.form.get(
+            f"dia_ativo_{indice}"
+        ) == "1"
+
+        if not ativo:
+            continue
+
+        hora_inicio = request.form.get(
+            f"hora_inicio_{indice}",
+            ""
+        ).strip()
+
+        hora_fim = request.form.get(
+            f"hora_fim_{indice}",
+            ""
+        ).strip()
+
+        disciplinas = [
+            disciplina.strip()
+            for disciplina in request.form.getlist(
+                f"disciplinas_{indice}[]"
+            )
+            if disciplina.strip()
+        ]
+
+        if not hora_inicio:
+            erros.append(
+                f"Defina a hora de entrada de {nome_dia}."
+            )
+
+        if not hora_fim:
+            erros.append(
+                f"Defina a hora de saída de {nome_dia}."
+            )
+
+        if (
+            hora_inicio
+            and hora_fim
+            and hora_fim <= hora_inicio
+        ):
+            erros.append(
+                f"A hora de saída de {nome_dia} deve ser posterior à hora de entrada."
+            )
+
+        if not disciplinas:
+            erros.append(
+                f"Adicione pelo menos uma disciplina em {nome_dia}."
+            )
+
+        if (
+            hora_inicio
+            and hora_fim
+            and disciplinas
+            and hora_fim > hora_inicio
+        ):
+            dias.append(
+                {
+                    "dia_semana": nome_dia,
+                    "hora_inicio": hora_inicio,
+                    "hora_fim": hora_fim,
+                    "disciplinas": disciplinas,
+                }
+            )
+
+    return dias, erros
+
+
+def guardar_horario_semanal(
+    centro_escolar,
+    turma,
+    dados_dias
+):
+    """
+    Mantém uma única configuração semanal por Centro Escolar + Turma.
+
+    A tabela atual é reaproveitada: cada disciplina continua a ser um
+    registo separado, mas os horários de entrada/saída são iguais para
+    todas as disciplinas do mesmo dia.
+
+    Não é necessária alteração da estrutura da base de dados.
+    """
+
+    existentes = HorarioTurma.query.filter_by(
+        centro_escolar=centro_escolar,
+        turma=turma
+    ).all()
+
+    for horario in existentes:
+        db.session.delete(horario)
+
+    for dia in dados_dias:
+
+        for disciplina in dia["disciplinas"]:
+
+            horario = HorarioTurma(
+                centro_escolar=centro_escolar,
+                turma=turma,
+                dia_semana=dia["dia_semana"],
+                hora_inicio=dia["hora_inicio"],
+                hora_fim=dia["hora_fim"],
+                disciplina=disciplina
+            )
+
+            db.session.add(horario)
+
+    db.session.commit()
+
+
+def obter_horario_turma(
+    centro_escolar,
+    turma
+):
+    """
+    Devolve o horário de uma turma já agrupado por dia.
+    """
+
+    lista = HorarioTurma.query.filter_by(
+        centro_escolar=centro_escolar,
+        turma=turma
+    ).all()
+
+    agrupado = OrderedDict()
+
+    for dia in DIAS_SEMANA:
+
+        itens = [
+            horario
+            for horario in lista
+            if horario.dia_semana == dia
+        ]
+
+        if itens:
+
+            itens.sort(
                 key=lambda h: (
-                    h.ordem_dia(),
-                    h.hora_inicio
+                    h.disciplina.lower()
+                    if h.disciplina else ""
                 )
             )
 
-    return agrupados
+            agrupado[dia] = itens
+
+    return agrupado
 
 
 # ------------------------------------------------------------------
@@ -98,7 +329,9 @@ def horarios():
 
     lista_horarios = HorarioTurma.query.all()
 
-    agrupados = agrupar_horarios(lista_horarios)
+    agrupados = agrupar_horarios(
+        lista_horarios
+    )
 
     return render_template(
         "horarios.html",
@@ -122,17 +355,46 @@ def novo_horario():
 
     if request.method == "POST":
 
-        horario = HorarioTurma(
-            centro_escolar=request.form["centro_escolar"].strip(),
-            turma=request.form["turma"].strip(),
-            dia_semana=request.form["dia_semana"],
-            hora_inicio=request.form["hora_inicio"],
-            hora_fim=request.form["hora_fim"],
-            disciplina=request.form["disciplina"].strip()
-        )
+        centro_escolar = request.form.get(
+            "centro_escolar",
+            ""
+        ).strip()
 
-        db.session.add(horario)
-        db.session.commit()
+        turma = request.form.get(
+            "turma",
+            ""
+        ).strip()
+
+        dados_dias, erros = recolher_dados_formulario()
+
+        if not centro_escolar:
+            erros.insert(0, "Preencha o Centro Escolar.")
+
+        if not turma:
+            erros.insert(0, "Preencha a Turma.")
+
+        if not dados_dias and not erros:
+            erros.append(
+                "Ative pelo menos um dia e preencha-o completamente."
+            )
+
+        if erros:
+
+            return render_template(
+                "horario_form.html",
+                horario=None,
+                escolas=escolas,
+                turmas=turmas,
+                dias_semana=DIAS_SEMANA,
+                dados_existentes=preparar_dados_para_formulario(),
+                erro=" ".join(erros)
+            )
+
+        guardar_horario_semanal(
+            centro_escolar,
+            turma,
+            dados_dias
+        )
 
         return redirect(
             url_for("horarios.horarios")
@@ -143,7 +405,8 @@ def novo_horario():
         horario=None,
         escolas=escolas,
         turmas=turmas,
-        dias_semana=DIAS_SEMANA
+        dias_semana=DIAS_SEMANA,
+        erro=None
     )
 
 
@@ -161,16 +424,77 @@ def editar_horario(id):
 
     horario = HorarioTurma.query.get_or_404(id)
 
+    horarios_turma = HorarioTurma.query.filter_by(
+        centro_escolar=horario.centro_escolar,
+        turma=horario.turma
+    ).all()
+
     escolas, turmas = obter_escolas_e_turmas()
 
     if request.method == "POST":
 
-        horario.centro_escolar = request.form["centro_escolar"].strip()
-        horario.turma = request.form["turma"].strip()
-        horario.dia_semana = request.form["dia_semana"]
-        horario.hora_inicio = request.form["hora_inicio"]
-        horario.hora_fim = request.form["hora_fim"]
-        horario.disciplina = request.form["disciplina"].strip()
+        centro_escolar = request.form.get(
+            "centro_escolar",
+            ""
+        ).strip()
+
+        turma = request.form.get(
+            "turma",
+            ""
+        ).strip()
+
+        dados_dias, erros = recolher_dados_formulario()
+
+        if not centro_escolar:
+            erros.insert(0, "Preencha o Centro Escolar.")
+
+        if not turma:
+            erros.insert(0, "Preencha a Turma.")
+
+        if not dados_dias and not erros:
+            erros.append(
+                "Ative pelo menos um dia e preencha-o completamente."
+            )
+
+        if erros:
+
+            return render_template(
+                "horario_form.html",
+                horario=horario,
+                horarios_turma=horarios_turma,
+                escolas=escolas,
+                turmas=turmas,
+                dias_semana=DIAS_SEMANA,
+                dados_existentes=preparar_dados_para_formulario(),
+                erro=" ".join(erros)
+            )
+
+        guardar_horario_semanal(
+            centro_escolar,
+            turma,
+            dados_dias
+        )
+
+        # Se a escola/turma foram alteradas, os registos antigos
+        # foram eliminados pelo guardar_horario_semanal do novo grupo
+        # apenas quando este grupo já existia. Os registos antigos são
+        # tratados abaixo.
+        grupo_antigo = HorarioTurma.query.filter_by(
+            centro_escolar=horario.centro_escolar,
+            turma=horario.turma
+        ).all()
+
+        # A referência "horario" pode já ter sido eliminada pelo
+        # guardar_horario_semanal. Como o objetivo é editar o grupo
+        # inteiro, garantimos que nenhum registo antigo permanece.
+        for item in grupo_antigo:
+
+            if (
+                item.centro_escolar != centro_escolar
+                or item.turma != turma
+            ):
+
+                db.session.delete(item)
 
         db.session.commit()
 
@@ -178,12 +502,43 @@ def editar_horario(id):
             url_for("horarios.horarios")
         )
 
+    # Agrupa os dados existentes para preencher o formulário.
+    dados_existentes = {}
+
+    for dia in DIAS_SEMANA:
+
+        itens = [
+            h
+            for h in horarios_turma
+            if h.dia_semana == dia
+        ]
+
+        if itens:
+
+            dados_existentes[dia] = {
+                "hora_inicio": itens[0].hora_inicio,
+                "hora_fim": itens[0].hora_fim,
+                "disciplinas": [
+                    h.disciplina
+                    for h in sorted(
+                        itens,
+                        key=lambda x: (
+                            x.disciplina.lower()
+                            if x.disciplina else ""
+                        )
+                    )
+                ]
+            }
+
     return render_template(
         "horario_form.html",
         horario=horario,
+        horarios_turma=horarios_turma,
+        dados_existentes=dados_existentes,
         escolas=escolas,
         turmas=turmas,
-        dias_semana=DIAS_SEMANA
+        dias_semana=DIAS_SEMANA,
+        erro=None
     )
 
 
@@ -200,7 +555,16 @@ def eliminar_horario(id):
 
     horario = HorarioTurma.query.get_or_404(id)
 
-    db.session.delete(horario)
+    # Um horário é agora tratado como o horário semanal da turma:
+    # eliminar uma linha elimina todo o horário dessa turma.
+    horarios_turma = HorarioTurma.query.filter_by(
+        centro_escolar=horario.centro_escolar,
+        turma=horario.turma
+    ).all()
+
+    for item in horarios_turma:
+        db.session.delete(item)
+
     db.session.commit()
 
     return redirect(

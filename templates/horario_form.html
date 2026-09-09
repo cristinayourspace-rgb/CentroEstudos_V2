@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block titulo %}
-{% if horario %}Editar Horário{% else %}Novo Horário{% endif %}
+{% if horario %}Editar Horário Escolar{% else %}Novo Horário Escolar{% endif %}
 {% endblock %}
 
 {% block conteudo %}
@@ -9,50 +9,201 @@
 <style>
 
     .pagina-header{ margin-bottom:24px; }
+
     .pagina-header h2{
         font-size:1.6rem;
         font-weight:700;
         color:#1f2937;
         margin:0 0 6px 0;
     }
+
     .pagina-header p{
         color:#6b7280;
         margin:0;
+        line-height:1.5;
     }
-
-    .campo-label{
-        display:block;
-        font-size:0.75rem;
-        font-weight:600;
-        color:#9ca3af;
-        text-transform:uppercase;
-        letter-spacing:0.05em;
-        margin-bottom:4px;
-        margin-top:12px;
-    }
-    .campo-label:first-of-type{ margin-top:0; }
 
     .form-grid{
         display:grid;
         grid-template-columns:1fr;
-        gap:0 20px;
+        gap:18px 20px;
     }
 
     @media (min-width:640px){
         .form-grid{ grid-template-columns:1fr 1fr; }
     }
 
+    .campo-label{
+        display:block;
+        font-size:0.75rem;
+        font-weight:700;
+        color:#6b7280;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:6px;
+    }
+
+    .secao-semana{
+        margin-top:26px;
+        border-top:1px solid #e5e7eb;
+        padding-top:22px;
+    }
+
+    .secao-semana h3{
+        margin:0;
+        font-size:1.05rem;
+        font-weight:700;
+        color:#1f2937;
+    }
+
+    .secao-semana p{
+        margin:5px 0 18px;
+        font-size:0.88rem;
+        color:#6b7280;
+    }
+
+    .dias-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:14px;
+    }
+
+    .dia-card{
+        border:1px solid #e5e7eb;
+        border-radius:16px;
+        background:#f9fafb;
+        padding:16px;
+    }
+
+    .dia-card.ativo{
+        border-color:#bfdbfe;
+        background:#eff6ff;
+    }
+
+    .dia-cabecalho{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:12px;
+    }
+
+    .dia-titulo{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        font-weight:700;
+        color:#1f2937;
+    }
+
+    .dia-titulo input{
+        width:auto;
+        margin:0;
+    }
+
+    .dia-conteudo{
+        display:none;
+    }
+
+    .dia-card.ativo .dia-conteudo{
+        display:block;
+    }
+
+    .horas-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+        margin-bottom:14px;
+    }
+
+    @media (max-width:520px){
+        .horas-grid{ grid-template-columns:1fr; }
+    }
+
+    .disciplinas-titulo{
+        font-size:0.72rem;
+        font-weight:700;
+        color:#6b7280;
+        text-transform:uppercase;
+        letter-spacing:0.05em;
+        margin-bottom:7px;
+    }
+
+    .disciplinas-lista{
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+    }
+
+    .disciplina-linha{
+        display:flex;
+        gap:8px;
+        align-items:center;
+    }
+
+    .disciplina-linha input{
+        flex:1;
+        min-width:0;
+    }
+
+    .btn-remover-disciplina{
+        width:40px;
+        height:40px;
+        border:1px solid #fecaca;
+        border-radius:10px;
+        background:#fef2f2;
+        color:#dc2626;
+        cursor:pointer;
+        font-weight:700;
+        flex:none;
+    }
+
+    .btn-adicionar-disciplina{
+        margin-top:9px;
+        border:1px dashed #93c5fd;
+        background:#ffffff;
+        color:#2563eb;
+        border-radius:10px;
+        padding:8px 12px;
+        font-size:0.82rem;
+        font-weight:700;
+        cursor:pointer;
+    }
+
+    .ajuda-dia{
+        margin-top:9px;
+        font-size:0.78rem;
+        color:#6b7280;
+    }
+
+    .alerta{
+        margin-bottom:20px;
+        padding:12px 14px;
+        border-radius:12px;
+        background:#fef2f2;
+        border:1px solid #fecaca;
+        color:#b91c1c;
+        font-size:0.9rem;
+    }
+
+    .aviso-substituicao{
+        margin-top:18px;
+        padding:12px 14px;
+        border-radius:12px;
+        background:#fffbeb;
+        border:1px solid #fde68a;
+        color:#92400e;
+        font-size:0.85rem;
+        line-height:1.5;
+    }
+
     .rodape-form{
         display:flex;
         justify-content:flex-end;
         gap:10px;
-        margin-top:18px;
-    }
-
-    @media (max-width:640px){
-        .rodape-form{ flex-direction:column-reverse; }
-        .rodape-form button,
-        .rodape-form a{ width:100%; text-align:center; }
+        margin-top:22px;
+        padding-top:18px;
+        border-top:1px solid #e5e7eb;
     }
 
     .btn-cancelar{
@@ -62,25 +213,46 @@
         background:#f3f4f6;
         color:#374151;
         border-radius:12px;
-        padding:12px 20px;
+        padding:11px 18px;
         font-weight:600;
         text-decoration:none;
     }
+
     .btn-cancelar:hover{ background:#e5e7eb; }
+
+    @media (max-width:640px){
+        .rodape-form{
+            flex-direction:column-reverse;
+        }
+
+        .rodape-form button,
+        .rodape-form a{
+            width:100%;
+            text-align:center;
+        }
+    }
 
 </style>
 
 <div class="pagina-header">
     <h2>
-        {% if horario %}Editar Horário{% else %}Novo Horário{% endif %}
+        {% if horario %}Editar Horário Escolar{% else %}Novo Horário Escolar{% endif %}
     </h2>
+
     <p>
-        Defina o horário semanal de uma turma. Este horário será
-        automaticamente visível para todos os alunos dessa turma.
+        Defina o horário semanal completo da turma. Em cada dia pode
+        adicionar várias disciplinas, mantendo apenas uma hora de entrada
+        e uma hora de saída para esse dia.
     </p>
 </div>
 
 <div class="card">
+
+    {% if erro %}
+        <div class="alerta">
+            {{ erro }}
+        </div>
+    {% endif %}
 
     <form method="POST">
 
@@ -88,6 +260,7 @@
 
             <div>
                 <label class="campo-label">Centro Escolar</label>
+
                 <input
                     type="text"
                     name="centro_escolar"
@@ -105,6 +278,7 @@
 
             <div>
                 <label class="campo-label">Turma</label>
+
                 <input
                     type="text"
                     name="turma"
@@ -120,62 +294,173 @@
                 </datalist>
             </div>
 
-            <div>
-                <label class="campo-label">Dia da Semana</label>
-                <select name="dia_semana" required>
+        </div>
 
-                    {% for dia in dias_semana %}
-                        <option
-                            value="{{ dia }}"
-                            {% if horario and horario.dia_semana == dia %}selected{% endif %}
-                        >
-                            {{ dia }}
-                        </option>
-                    {% endfor %}
+        <div class="secao-semana">
 
-                </select>
-            </div>
+            <h3>Dias da semana</h3>
 
-            <div>
-                <label class="campo-label">Disciplina</label>
-                <input
-                    type="text"
-                    name="disciplina"
-                    value="{{ horario.disciplina if horario else '' }}"
-                    required
-                >
-            </div>
+            <p>
+                Ative os dias que fazem parte do horário e adicione todas
+                as disciplinas desse dia.
+            </p>
 
-            <div>
-                <label class="campo-label">Hora Início</label>
-                <input
-                    type="time"
-                    name="hora_inicio"
-                    value="{{ horario.hora_inicio if horario else '' }}"
-                    required
-                >
-            </div>
+            <div class="dias-grid">
 
-            <div>
-                <label class="campo-label">Hora Fim</label>
-                <input
-                    type="time"
-                    name="hora_fim"
-                    value="{{ horario.hora_fim if horario else '' }}"
-                    required
-                >
+                {% for indice in range(dias_semana|length) %}
+
+                    {% set dia = dias_semana[indice] %}
+                    {% set dados = dados_existentes.get(dia) if dados_existentes else None %}
+
+                    <div
+                        class="dia-card{% if dados %} ativo{% endif %}"
+                        data-dia-index="{{ indice }}"
+                    >
+
+                        <div class="dia-cabecalho">
+
+                            <label class="dia-titulo">
+
+                                <input
+                                    type="checkbox"
+                                    name="dia_ativo_{{ indice }}"
+                                    value="1"
+                                    {% if dados %}checked{% endif %}
+                                    onchange="alternarDia(this)"
+                                >
+
+                                <span>{{ dia }}</span>
+
+                            </label>
+
+                        </div>
+
+                        <div class="dia-conteudo">
+
+                            <div class="horas-grid">
+
+                                <div>
+                                    <label class="campo-label">Hora de entrada</label>
+
+                                    <input
+                                        type="time"
+                                        name="hora_inicio_{{ indice }}"
+                                        value="{{ dados.hora_inicio if dados else '' }}"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="campo-label">Hora de saída</label>
+
+                                    <input
+                                        type="time"
+                                        name="hora_fim_{{ indice }}"
+                                        value="{{ dados.hora_fim if dados else '' }}"
+                                    >
+                                </div>
+
+                            </div>
+
+                            <div class="disciplinas-titulo">
+                                Disciplinas
+                            </div>
+
+                            <div
+                                class="disciplinas-lista"
+                                id="disciplinas_{{ indice }}"
+                            >
+
+                                {% if dados and dados.disciplinas %}
+
+                                    {% for disciplina in dados.disciplinas %}
+
+                                        <div class="disciplina-linha">
+
+                                            <input
+                                                type="text"
+                                                name="disciplinas_{{ indice }}[]"
+                                                value="{{ disciplina }}"
+                                                placeholder="Ex.: Matemática"
+                                            >
+
+                                            <button
+                                                type="button"
+                                                class="btn-remover-disciplina"
+                                                onclick="removerDisciplina(this)"
+                                                aria-label="Remover disciplina"
+                                            >
+                                                ×
+                                            </button>
+
+                                        </div>
+
+                                    {% endfor %}
+
+                                {% else %}
+
+                                    <div class="disciplina-linha">
+
+                                        <input
+                                            type="text"
+                                            name="disciplinas_{{ indice }}[]"
+                                            placeholder="Ex.: Matemática"
+                                        >
+
+                                        <button
+                                            type="button"
+                                            class="btn-remover-disciplina"
+                                            onclick="removerDisciplina(this)"
+                                            aria-label="Remover disciplina"
+                                        >
+                                            ×
+                                        </button>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                            <button
+                                type="button"
+                                class="btn-adicionar-disciplina"
+                                onclick="adicionarDisciplina({{ indice }})"
+                            >
+                                + Adicionar disciplina
+                            </button>
+
+                            <div class="ajuda-dia">
+                                Pode adicionar quantas disciplinas forem necessárias neste dia.
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
             </div>
 
         </div>
 
+        {% if horario %}
+            <div class="aviso-substituicao">
+                Ao guardar, o horário semanal atual desta turma será
+                substituído pelo novo horário definido acima.
+            </div>
+        {% endif %}
+
         <div class="rodape-form">
 
-            <a href="{{ url_for('horarios.horarios') }}" class="btn-cancelar">
+            <a
+                href="{{ url_for('horarios.horarios') }}"
+                class="btn-cancelar"
+            >
                 Cancelar
             </a>
 
             <button type="submit">
-                Guardar
+                Guardar Horário
             </button>
 
         </div>
@@ -183,5 +468,95 @@
     </form>
 
 </div>
+
+<script>
+
+    function alternarDia(checkbox) {
+
+        const card = checkbox.closest(".dia-card");
+
+        if (!card) {
+            return;
+        }
+
+        if (checkbox.checked) {
+            card.classList.add("ativo");
+        } else {
+            card.classList.remove("ativo");
+        }
+    }
+
+
+    function adicionarDisciplina(indice) {
+
+        const lista = document.getElementById(
+            `disciplinas_${indice}`
+        );
+
+        if (!lista) {
+            return;
+        }
+
+        const linha = document.createElement("div");
+
+        linha.className = "disciplina-linha";
+
+        linha.innerHTML = `
+            <input
+                type="text"
+                name="disciplinas_${indice}[]"
+                placeholder="Ex.: Português"
+            >
+
+            <button
+                type="button"
+                class="btn-remover-disciplina"
+                onclick="removerDisciplina(this)"
+                aria-label="Remover disciplina"
+            >
+                ×
+            </button>
+        `;
+
+        lista.appendChild(linha);
+
+        const input = linha.querySelector("input");
+
+        if (input) {
+            input.focus();
+        }
+    }
+
+
+    function removerDisciplina(botao) {
+
+        const linha = botao.closest(".disciplina-linha");
+
+        if (!linha) {
+            return;
+        }
+
+        const lista = linha.parentElement;
+
+        const linhas = lista.querySelectorAll(
+            ".disciplina-linha"
+        );
+
+        if (linhas.length === 1) {
+
+            const input = linhas[0].querySelector("input");
+
+            if (input) {
+                input.value = "";
+                input.focus();
+            }
+
+            return;
+        }
+
+        linha.remove();
+    }
+
+</script>
 
 {% endblock %}
