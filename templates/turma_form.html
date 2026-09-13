@@ -22,7 +22,7 @@
 </form></div></div>
 <script>
 const mapa={{ disciplinas_por_ano|tojson }}; const selecionadas={{ disciplinas_selecionadas|tojson }}; const ano=document.getElementById('anoEscolar'); const box=document.getElementById('disciplinasContainer'); const outros=document.getElementById('checkOutros'); const outroBox=document.getElementById('outroBox'); const outro=document.getElementById('disciplinaOutro');
-function renderDisciplinas(){box.innerHTML=''; const lista=mapa[ano.value]||[]; lista.forEach(d=>{const l=document.createElement('label');l.className='disc';l.innerHTML=`<input type="checkbox" name="disciplinas" value="${d.replaceAll('"','&quot;')}"><span>${d}</span>`;const c=l.querySelector('input'); if(selecionadas.includes(d)) c.checked=true; box.appendChild(l)}); if(!lista.length){box.innerHTML='<div class="mini">Selecione primeiro o ano escolar.</div>'}}
+function renderDisciplinas(){box.innerHTML=''; const lista=(mapa[ano.value]||[]).filter(d=>d!=='Outros'); lista.forEach(d=>{const l=document.createElement('label');l.className='disc';l.innerHTML=`<input type="checkbox" name="disciplinas" value="${d.replaceAll('"','&quot;')}"><span>${d}</span>`;const c=l.querySelector('input'); if(selecionadas.includes(d)) c.checked=true; box.appendChild(l)}); if(!lista.length){box.innerHTML='<div class="mini">Selecione primeiro o ano escolar.</div>'}}
 outros.addEventListener('change',()=>{outroBox.style.display=outros.checked?'block':'none'; if(!outros.checked) outro.value='';});
 if(selecionadas.some(x=>!(Object.values(mapa).flat()).includes(x))){outros.checked=true;outroBox.style.display='block';outro.value=selecionadas.find(x=>!(Object.values(mapa).flat()).includes(x))||''}
 ano.addEventListener('change',renderDisciplinas); renderDisciplinas();
