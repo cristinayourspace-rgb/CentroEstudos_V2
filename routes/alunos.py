@@ -21,7 +21,6 @@ from models.teste import Teste
 
 from models.configuracao_centro import ConfiguracaoCentro
 from models.horario_turma import HorarioTurma
-from models.turma import Turma
 
 from collections import OrderedDict
 from io import BytesIO
@@ -417,61 +416,12 @@ def listar_alunos():
                 key=lambda a: (a.nome or "").strip().lower()
             )
 
-    # ------------------------------------------------------------------
-    # DADOS PARA O MODAL "TURMAS" (criar turma / atribuir turma a alunos)
-    # ------------------------------------------------------------------
-
-    turmas_existentes = Turma.query.order_by(
-        Turma.escola.asc(),
-        Turma.nome.asc()
-    ).all()
-
-    # Agrupamento Escola -> Ano Escolar -> Alunos (para o passo
-    # "Atribuir Turma a Alunos" do modal de Turmas)
-    agrupamento_ano_temp = {}
-
-    for aluno in alunos:
-
-        escola = (aluno.escola or "").strip() or "Sem Escola"
-        ano = (aluno.ano_escolar or "").strip() or "Sem Ano"
-
-        agrupamento_ano_temp.setdefault(escola, {}).setdefault(ano, []).append(aluno)
-
-    alunos_por_escola_ano = OrderedDict()
-
-    for escola in sorted(agrupamento_ano_temp.keys()):
-
-        alunos_por_escola_ano[escola] = OrderedDict()
-
-        for ano in sorted(agrupamento_ano_temp[escola].keys()):
-
-            alunos_por_escola_ano[escola][ano] = sorted(
-                agrupamento_ano_temp[escola][ano],
-                key=lambda a: (a.nome or "").strip().lower()
-            )
-
-    escolas_existentes = sorted(
-        {
-            (aluno.escola or "").strip()
-            for aluno in alunos
-            if (aluno.escola or "").strip()
-        }
-        | {
-            (turma.escola or "").strip()
-            for turma in turmas_existentes
-            if (turma.escola or "").strip()
-        }
-    )
-
     return render_template(
         "alunos.html",
         alunos=alunos,
         alunos_agrupados=alunos_agrupados,
         necessidades=necessidades,
         objetivos=objetivos,
-        turmas_existentes=turmas_existentes,
-        escolas_existentes=escolas_existentes,
-        alunos_por_escola_ano=alunos_por_escola_ano,
     )
 
 

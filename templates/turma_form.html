@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}{% if turma %}Editar Turma{% else %}Criar Turma{% endif %}{% endblock %}
+{% block conteudo %}
+<style>
+.t-page{max-width:980px;margin:auto}.t-head{margin-bottom:20px}.t-head h2{font-size:1.55rem;font-weight:800;color:#0f172a;margin:0}.t-head p{color:#64748b;margin:5px 0 0}.t-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:22px;box-shadow:0 2px 8px rgba(15,23,42,.05);margin-bottom:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.grid{grid-template-columns:1fr}}label{display:block;font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}input,select{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:11px 12px;font-size:.95rem;background:#fff}.erro{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:12px;margin-bottom:16px}.disc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}@media(max-width:700px){.disc-grid{grid-template-columns:1fr}}.disc{display:flex;align-items:center;gap:9px;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;background:#f8fafc}.disc:hover{background:#f1f5f9}.disc input{width:auto}.outro{display:none;margin-top:10px}.acoes{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.btn{border:0;border-radius:11px;padding:11px 17px;font-weight:700;text-decoration:none;cursor:pointer}.btn-cancel{background:#f1f5f9;color:#334155}.btn-save{background:#2563eb;color:#fff}.hint{font-size:.82rem;color:#64748b;margin-top:8px}.mini{font-size:.8rem;color:#64748b;margin-top:4px}
+</style>
+<div class="t-page"><div class="t-head"><h2>{% if turma %}Editar Turma{% else %}Criar Turma{% endif %}</h2><p>Registe a turma uma vez e selecione as disciplinas que fazem parte do seu horário.</p></div>
+<div class="t-card">{% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+<form method="POST">
+<div class="grid">
+<div><label>Escola</label><input name="escola" list="lista-escolas" value="{{ turma.escola if turma else '' }}" required><datalist id="lista-escolas">{% for escola in escolas %}<option value="{{ escola }}">{% endfor %}</datalist></div>
+<div><label>Ano Escolar</label><select name="ano_escolar" id="anoEscolar" required><option value="">Selecione...</option>{% for ano in anos_escolares %}<option value="{{ ano }}" {% if turma and turma.ano_escolar==ano %}selected{% endif %}>{{ ano }}</option>{% endfor %}</select></div>
+<div><label>Nome da Turma</label><input name="nome" value="{{ turma.nome if turma else '' }}" placeholder="Ex.: 9.º A" required></div>
+<div><label>Diretor(a) de Turma <span style="font-weight:400;text-transform:none">(opcional)</span></label><input name="diretor_turma" value="{{ turma.diretor_turma if turma else '' }}"></div>
+</div>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:22px 0">
+<label>Disciplinas da Turma</label><div class="hint">Assinale as disciplinas. A opção <strong>Outros</strong> permite acrescentar uma disciplina personalizada.</div>
+<div id="disciplinasContainer" class="disc-grid"></div>
+<label class="disc" style="margin-top:9px"><input type="checkbox" id="checkOutros"> <span>Outros</span></label>
+<div class="outro" id="outroBox"><label style="margin-top:8px">Nome da disciplina</label><input name="disciplina_outro" id="disciplinaOutro" placeholder="Escreva a disciplina"></div>
+<div class="acoes"><a class="btn btn-cancel" href="{{ url_for('turma.turmas') }}">Cancelar</a><button class="btn btn-save" type="submit">{% if turma %}Guardar Alterações{% else %}Criar Turma{% endif %}</button></div>
+</form></div></div>
+<script>
+const mapa={{ disciplinas_por_ano|tojson }}; const selecionadas={{ disciplinas_selecionadas|tojson }}; const ano=document.getElementById('anoEscolar'); const box=document.getElementById('disciplinasContainer'); const outros=document.getElementById('checkOutros'); const outroBox=document.getElementById('outroBox'); const outro=document.getElementById('disciplinaOutro');
+function renderDisciplinas(){box.innerHTML=''; const lista=mapa[ano.value]||[]; lista.forEach(d=>{const l=document.createElement('label');l.className='disc';l.innerHTML=`<input type="checkbox" name="disciplinas" value="${d.replaceAll('"','&quot;')}"><span>${d}</span>`;const c=l.querySelector('input'); if(selecionadas.includes(d)) c.checked=true; box.appendChild(l)}); if(!lista.length){box.innerHTML='<div class="mini">Selecione primeiro o ano escolar.</div>'}}
+outros.addEventListener('change',()=>{outroBox.style.display=outros.checked?'block':'none'; if(!outros.checked) outro.value='';});
+if(selecionadas.some(x=>!(Object.values(mapa).flat()).includes(x))){outros.checked=true;outroBox.style.display='block';outro.value=selecionadas.find(x=>!(Object.values(mapa).flat()).includes(x))||''}
+ano.addEventListener('change',renderDisciplinas); renderDisciplinas();
+</script>
+{% endblock %}

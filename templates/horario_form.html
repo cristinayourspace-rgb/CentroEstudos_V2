@@ -265,7 +265,7 @@
                     type="text"
                     name="centro_escolar"
                     list="lista-escolas"
-                    value="{{ horario.centro_escolar if horario else '' }}"
+                    value="{{ horario.centro_escolar if horario else (turma_obj.escola if turma_obj else '') }}"
                     required
                 >
 
@@ -283,7 +283,7 @@
                     type="text"
                     name="turma"
                     list="lista-turmas"
-                    value="{{ horario.turma if horario else '' }}"
+                    value="{{ horario.turma if horario else (turma_obj.nome if turma_obj else '') }}"
                     required
                 >
 
@@ -370,67 +370,32 @@
                                 id="disciplinas_{{ indice }}"
                             >
 
-                                {% if dados and dados.disciplinas %}
+                                {% set lista_disciplinas = disciplinas_turma or [] %}
+                                {% set selecionadas = dados.disciplinas if dados and dados.disciplinas else [] %}
 
-                                    {% for disciplina in dados.disciplinas %}
-
-                                        <div class="disciplina-linha">
-
+                                {% if lista_disciplinas %}
+                                    {% for disciplina in lista_disciplinas %}
+                                        <label class="disciplina-linha" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
                                             <input
-                                                type="text"
+                                                type="checkbox"
                                                 name="disciplinas_{{ indice }}[]"
                                                 value="{{ disciplina }}"
-                                                placeholder="Ex.: Matemática"
+                                                style="width:auto;flex:none;"
+                                                {% if disciplina in selecionadas %}checked{% endif %}
                                             >
-
-                                            <button
-                                                type="button"
-                                                class="btn-remover-disciplina"
-                                                onclick="removerDisciplina(this)"
-                                                aria-label="Remover disciplina"
-                                            >
-                                                ×
-                                            </button>
-
-                                        </div>
-
+                                            <span>{{ disciplina }}</span>
+                                        </label>
                                     {% endfor %}
-
                                 {% else %}
-
-                                    <div class="disciplina-linha">
-
-                                        <input
-                                            type="text"
-                                            name="disciplinas_{{ indice }}[]"
-                                            placeholder="Ex.: Matemática"
-                                        >
-
-                                        <button
-                                            type="button"
-                                            class="btn-remover-disciplina"
-                                            onclick="removerDisciplina(this)"
-                                            aria-label="Remover disciplina"
-                                        >
-                                            ×
-                                        </button>
-
+                                    <div class="ajuda-dia" style="margin-top:0;">
+                                        Esta turma ainda não tem disciplinas definidas. Volte a <strong>Turmas → Editar</strong> e assinale as disciplinas.
                                     </div>
-
                                 {% endif %}
 
                             </div>
 
-                            <button
-                                type="button"
-                                class="btn-adicionar-disciplina"
-                                onclick="adicionarDisciplina({{ indice }})"
-                            >
-                                + Adicionar disciplina
-                            </button>
-
                             <div class="ajuda-dia">
-                                Pode adicionar quantas disciplinas forem necessárias neste dia.
+                                As disciplinas são as que foram definidas para a turma.
                             </div>
 
                         </div>
@@ -486,76 +451,6 @@
         }
     }
 
-
-    function adicionarDisciplina(indice) {
-
-        const lista = document.getElementById(
-            `disciplinas_${indice}`
-        );
-
-        if (!lista) {
-            return;
-        }
-
-        const linha = document.createElement("div");
-
-        linha.className = "disciplina-linha";
-
-        linha.innerHTML = `
-            <input
-                type="text"
-                name="disciplinas_${indice}[]"
-                placeholder="Ex.: Português"
-            >
-
-            <button
-                type="button"
-                class="btn-remover-disciplina"
-                onclick="removerDisciplina(this)"
-                aria-label="Remover disciplina"
-            >
-                ×
-            </button>
-        `;
-
-        lista.appendChild(linha);
-
-        const input = linha.querySelector("input");
-
-        if (input) {
-            input.focus();
-        }
-    }
-
-
-    function removerDisciplina(botao) {
-
-        const linha = botao.closest(".disciplina-linha");
-
-        if (!linha) {
-            return;
-        }
-
-        const lista = linha.parentElement;
-
-        const linhas = lista.querySelectorAll(
-            ".disciplina-linha"
-        );
-
-        if (linhas.length === 1) {
-
-            const input = linhas[0].querySelector("input");
-
-            if (input) {
-                input.value = "";
-                input.focus();
-            }
-
-            return;
-        }
-
-        linha.remove();
-    }
 
 </script>
 

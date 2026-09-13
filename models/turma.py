@@ -30,3 +30,10 @@ class Turma(db.Model):
     observacoes = db.Column(
         db.Text
     )
+
+    # Disciplinas selecionadas para esta turma.
+    # Guardadas como JSON para permitir várias disciplinas e a opção Outros
+    # sem alterar a estrutura existente das tabelas de horários.
+    disciplinas = db.Column(
+        db.Text
+    )

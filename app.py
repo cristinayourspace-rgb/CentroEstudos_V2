@@ -21,9 +21,10 @@ from models.teste import Teste
 from models.evento import Evento
 from models.configuracao_centro import ConfiguracaoCentro
 from models.horario_turma import HorarioTurma
+from models.turma import Turma
 
 from routes.alunos import alunos_bp
-from routes.frequencias import frequencias_bp, obter_resumo_diario
+from routes.frequencias import frequencias_bp
 from routes.notas import notas_bp
 from routes.turma import turma_bp
 from routes.testes import testes_bp
@@ -106,6 +107,33 @@ with app.app_context():
                 conexao.execute(
                     text("ALTER TABLE turmas ADD COLUMN diretor_turma VARCHAR(150)")
                 )
+
+            if "disciplinas" not in colunas_turmas:
+                conexao.execute(
+                    text("ALTER TABLE turmas ADD COLUMN disciplinas TEXT")
+                )
+
+            # Reaproveita disciplinas já existentes nos horários para
+            # preencher a nova seleção de disciplinas das turmas sem
+            # perder dados históricos.
+            turmas_sem_disciplinas = conexao.execute(
+                text("SELECT id, escola, nome FROM turmas WHERE disciplinas IS NULL OR TRIM(disciplinas) = ''")
+            ).fetchall()
+
+            for turma_id, escola_turma, nome_turma in turmas_sem_disciplinas:
+                linhas = conexao.execute(
+                    text("SELECT DISTINCT disciplina FROM horarios_turma WHERE centro_escolar = :escola AND turma = :turma AND disciplina IS NOT NULL AND TRIM(disciplina) <> ''"),
+                    {"escola": escola_turma, "turma": nome_turma}
+                ).fetchall()
+
+                disciplinas_existentes = [linha[0].strip() for linha in linhas if linha[0] and linha[0].strip()]
+
+                if disciplinas_existentes:
+                    import json
+                    conexao.execute(
+                        text("UPDATE turmas SET disciplinas = :disciplinas WHERE id = :id"),
+                        {"disciplinas": json.dumps(disciplinas_existentes, ensure_ascii=False), "id": turma_id}
+                    )
 
             conexao.commit()
 
@@ -221,10 +249,11 @@ def inicio():
         ativo=True
     ).count()
 
-    resumo_frequencias = obter_resumo_diario()
+    alunos_em_estudo = Frequencia.query.filter_by(
+        hora_saida=None
+    ).count()
 
-    alunos_em_estudo = resumo_frequencias["em_estudo"]
-    total_frequencias = resumo_frequencias["total"]
+    total_frequencias = Frequencia.query.count()
 
     total_notas = Nota.query.count()
 

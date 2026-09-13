@@ -17,6 +17,8 @@ from models.horario_turma import (
     HorarioTurma,
     DIAS_SEMANA
 )
+from models.turma import Turma
+import json
 
 
 horarios_bp = Blueprint(
@@ -363,6 +365,19 @@ def obter_horario_turma(
 
 
 # ------------------------------------------------------------------
+# DISCIPLINAS DA TURMA
+# ------------------------------------------------------------------
+def disciplinas_da_turma(turma):
+    try:
+        dados = json.loads(turma.disciplinas or "[]")
+        if isinstance(dados, list):
+            return [str(x).strip() for x in dados if str(x).strip()]
+    except (TypeError, ValueError):
+        pass
+    return []
+
+
+# ------------------------------------------------------------------
 # ROTAS
 # ------------------------------------------------------------------
 
@@ -396,6 +411,9 @@ def novo_horario():
         )
 
     escolas, turmas = obter_escolas_e_turmas()
+    turma_id = request.args.get("turma_id", type=int)
+    turma_obj = Turma.query.get(turma_id) if turma_id else None
+    disciplinas_turma = disciplinas_da_turma(turma_obj) if turma_obj else []
 
     if request.method == "POST":
 
@@ -431,7 +449,9 @@ def novo_horario():
                 turmas=turmas,
                 dias_semana=DIAS_SEMANA,
                 dados_existentes=preparar_dados_para_formulario(),
-                erro=" ".join(erros)
+                erro=" ".join(erros),
+                turma_obj=turma_obj,
+                disciplinas_turma=disciplinas_turma,
             )
 
         guardar_horario_semanal(
@@ -450,7 +470,9 @@ def novo_horario():
         escolas=escolas,
         turmas=turmas,
         dias_semana=DIAS_SEMANA,
-        erro=None
+        erro=None,
+        turma_obj=turma_obj,
+        disciplinas_turma=disciplinas_turma,
     )
 
 
@@ -474,6 +496,8 @@ def editar_horario(id):
     ).all()
 
     escolas, turmas = obter_escolas_e_turmas()
+    turma_obj = Turma.query.filter_by(nome=horario.turma, escola=horario.centro_escolar).first()
+    disciplinas_turma = disciplinas_da_turma(turma_obj) if turma_obj else []
 
     if request.method == "POST":
 
@@ -510,7 +534,9 @@ def editar_horario(id):
                 turmas=turmas,
                 dias_semana=DIAS_SEMANA,
                 dados_existentes=preparar_dados_para_formulario(),
-                erro=" ".join(erros)
+                erro=" ".join(erros),
+                turma_obj=turma_obj,
+                disciplinas_turma=disciplinas_turma,
             )
 
         guardar_horario_semanal(
@@ -582,7 +608,9 @@ def editar_horario(id):
         escolas=escolas,
         turmas=turmas,
         dias_semana=DIAS_SEMANA,
-        erro=None
+        erro=None,
+        turma_obj=turma_obj,
+        disciplinas_turma=disciplinas_turma,
     )
 
 
