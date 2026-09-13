@@ -249,9 +249,16 @@ def inicio():
         ativo=True
     ).count()
 
-    alunos_em_estudo = Frequencia.query.filter_by(
-        hora_saida=None
-    ).count()
+    hoje = datetime.now().strftime("%d/%m/%Y")
+
+    alunos_em_estudo = Frequencia.query.filter(
+        Frequencia.data == hoje,
+        Frequencia.hora_saida.is_(None),
+        Frequencia.disciplinas != "PRESENÇA",
+        db.or_(Frequencia.observacoes.is_(None), ~Frequencia.observacoes.startswith("[ANULADO]"))
+    ).with_entities(
+        Frequencia.aluno_id
+    ).distinct().count()
 
     total_frequencias = Frequencia.query.count()
 

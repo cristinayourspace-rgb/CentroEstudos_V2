@@ -43,3 +43,8 @@ teste_grafico.png
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Backups locais da base de dados de produção
+backup_producao_neon.dump
+*.dump
+*.BACKUP_*

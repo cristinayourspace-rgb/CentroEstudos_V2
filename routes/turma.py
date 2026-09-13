@@ -31,9 +31,9 @@ DISCIPLINAS_POR_ANO = {
     "7.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
     "8.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
     "9.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
-    "10.º Ano": ["Português", "Matemática A", "Matemática B", "MACS", "Inglês", "Biologia e Geologia", "Física e Química A", "História A", "Geografia A", "Economia A", "Filosofia"],
-    "11.º Ano": ["Português", "Matemática A", "Matemática B", "MACS", "Inglês", "Biologia e Geologia", "Física e Química A", "História A", "Geografia A", "Economia A", "Filosofia"],
-    "12.º Ano": ["Português", "Matemática A", "Matemática B", "MACS", "Inglês", "Biologia e Geologia", "Física e Química A", "História A", "Geografia A", "Economia A", "Filosofia"],
+    "10.º Ano": ["Outros"],
+    "11.º Ano": ["Outros"],
+    "12.º Ano": ["Outros"],
 }
 ANOS_ESCOLARES = list(DISCIPLINAS_POR_ANO.keys())
 
