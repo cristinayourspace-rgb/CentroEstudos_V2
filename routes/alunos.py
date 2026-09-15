@@ -601,6 +601,7 @@ def editar_aluno(id):
         aluno.turma = request.form.get("turma", "").strip()
         aluno.encarregado = request.form.get("encarregado", "").strip()
         aluno.telefone = request.form.get("telefone", "").strip()
+        aluno.email = request.form.get("email", "").strip()
         aluno.pacote_horas = float(
             request.form.get(
                 "pacote_horas",
