@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from datetime import datetime, time
+from zoneinfo import ZoneInfo
+
+FUSO_PORTUGAL = ZoneInfo('Europe/Lisbon')
 from urllib.parse import quote
 
 from models import db
@@ -20,7 +23,7 @@ HORA_RESET_DIARIO = time(19, 1)
 
 def periodo_diario_atual(agora=None):
     """Devolve a data contabilizada no ecrã ou None após as 19:01."""
-    agora = agora or datetime.now()
+    agora = agora or datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
 
     if agora.time() >= HORA_RESET_DIARIO:
         return None
@@ -39,7 +42,7 @@ def encerrar_sessoes_abertas_apos_reset(agora=None):
     Não elimina histórico nem remove registos da base de dados.
     A função é executada quando há uma nova utilização da aplicação.
     """
-    agora = agora or datetime.now()
+    agora = agora or datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
     deve_encerrar = agora.time() >= HORA_RESET_DIARIO
     data_atual = agora.strftime("%d/%m/%Y")
 
@@ -93,7 +96,7 @@ def obter_resumo_diario():
 
     Os registos históricos permanecem intactos na base de dados.
     """
-    agora = datetime.now()
+    agora = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
     data_atual = periodo_diario_atual(agora)
 
     # Primeiro fechamos sessões que não podem continuar abertas.
@@ -178,7 +181,7 @@ def obter_historico():
 def obter_aberta_do_aluno(aluno_id):
     encerrar_sessoes_abertas_apos_reset()
 
-    data_atual = datetime.now().strftime("%d/%m/%Y")
+    data_atual = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None).strftime("%d/%m/%Y")
 
     frequencias = Frequencia.query.filter_by(
         aluno_id=aluno_id,
@@ -194,7 +197,7 @@ def obter_aberta_do_aluno(aluno_id):
 
 
 def dia_permite_frequencia():
-    hoje = datetime.now()
+    hoje = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
 
     if hoje.time() >= HORA_RESET_DIARIO:
         return False, "O período diário encerrou às 19:01. Novos registos ficam disponíveis no dia seguinte."
@@ -253,7 +256,7 @@ def frequencias():
             mensagem = "Aluno não encontrado."
 
         elif modo_registo == "presenca":
-            agora = datetime.now()
+            agora = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
             data_hoje = agora.strftime("%d/%m/%Y")
 
             # Se já existe qualquer registo para o aluno nessa data,
@@ -289,7 +292,7 @@ def frequencias():
             aberta = obter_aberta_do_aluno(aluno.id)
 
             if not aberta:
-                agora = datetime.now()
+                agora = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
 
                 frequencia = Frequencia(
                     aluno_id=aluno.id,
@@ -365,7 +368,7 @@ def finalizar_frequencia(frequencia_id):
 
         observacoes = request.form.get("observacoes", "")
 
-        hora_saida = datetime.now()
+        hora_saida = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
 
         try:
             entrada = datetime.strptime(
@@ -607,7 +610,7 @@ def encerrar_todos_frequencias():
 
     for frequencia in abertas:
         aluno = frequencia.aluno
-        hora_saida = datetime.now()
+        hora_saida = datetime.now(FUSO_PORTUGAL).replace(tzinfo=None)
 
         try:
             entrada = datetime.strptime(
