@@ -1,40 +1,64 @@
 {% extends "base.html" %}
 
 {% block titulo %}
-Sessão Finalizada
+Saída Registada
 {% endblock %}
 
 {% block conteudo %}
 
 <div class="card">
 
-    <h2>
-        Sessão Finalizada
-    </h2>
+    {% if saida_solicitada %}
+        <h2>
+            Saída Registada
+        </h2>
 
-    <br>
+        <br>
 
-    <p>
-        Estudo terminado para
-        <strong>{{ aluno.nome }}</strong>
-    </p>
+        <p>
+            Saída solicitada para
+            <strong>{{ aluno.nome }}</strong>.
+        </p>
 
-    <br>
+        <p>
+            Tempo registado: <strong>2 horas</strong>
+        </p>
 
-    <a
-        href="{{ whatsapp_link }}"
-        target="_blank"
-        style="
-            display:inline-block;
-            padding:12px 20px;
-            background:#25D366;
-            color:white;
-            text-decoration:none;
-            border-radius:6px;
-        "
-    >
-        📱 Enviar WhatsApp
-    </a>
+    {% else %}
+        <h2>
+            Sessão Finalizada
+        </h2>
+
+        <br>
+
+        <p>
+            Estudo terminado para
+            <strong>{{ aluno.nome }}</strong>.
+        </p>
+
+        <p>
+            Tempo de estudo: <strong>{{ duracao }} horas</strong>
+        </p>
+
+        {% if whatsapp_link %}
+            <br>
+
+            <a
+                href="{{ whatsapp_link }}"
+                target="_blank"
+                style="
+                    display:inline-block;
+                    padding:12px 20px;
+                    background:#25D366;
+                    color:white;
+                    text-decoration:none;
+                    border-radius:6px;
+                "
+            >
+                📱 Enviar WhatsApp
+            </a>
+        {% endif %}
+    {% endif %}
 
     <br><br>
 
@@ -45,3 +69,4 @@ Sessão Finalizada
 </div>
 
 {% endblock %}
+

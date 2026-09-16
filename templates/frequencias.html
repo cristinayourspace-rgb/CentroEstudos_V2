@@ -1,67 +1,121 @@
 {% extends "base.html" %}
 
-{% block titulo %}
-Frequências
-{% endblock %}
+{% block titulo %}Frequências{% endblock %}
 
 {% block conteudo %}
 
 <style>
 .btn-encerrar-todos {
-    background:#dc2626;
-    color:#ffffff;
-    border:none;
-    padding:14px 24px;
-    border-radius:10px;
-    font-size:15px;
-    font-weight:600;
-    cursor:pointer;
-    box-shadow:0 4px 12px rgba(220,38,38,0.25);
-    transition:background 0.2s ease;
-    white-space:nowrap;
+    background:#dc2626;color:#fff;border:none;padding:14px 24px;
+    border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;
 }
-.btn-encerrar-todos:hover { background:#b91c1c; }
 
 .btn-acao {
+    border:none;border-radius:8px;padding:8px 10px;font-size:12px;
+    font-weight:700;cursor:pointer;margin:2px;
+}
+
+.btn-corrigir { background:#fef3c7;color:#92400e; }
+.btn-anular { background:#fee2e2;color:#991b1b; }
+.btn-eliminar { background:#e5e7eb;color:#374151; }
+
+.aluno-fluxo-card {
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.aluno-estudo-card {
+    border:1px solid #bbf7d0;
+    background:#f0fdf4;
+}
+
+.aluno-espera-card {
+    border:1px solid #fed7aa;
+    background:#fff7ed;
+}
+
+.aluno-fluxo-nome {
+    font-size:17px;
+    font-weight:700;
+}
+
+.aluno-estudo-card .aluno-fluxo-nome {
+    color:#166534;
+}
+
+.aluno-espera-card .aluno-fluxo-nome {
+    color:#9a3412;
+}
+
+.aluno-fluxo-info {
+    font-size:13px;
+    margin-top:5px;
+    color:#6b7280;
+}
+
+.btn-saida {
+    background:#dc2626;
+    color:#fff;
     border:none;
-    border-radius:8px;
-    padding:8px 10px;
-    font-size:12px;
+    border-radius:10px;
+    padding:12px 20px;
     font-weight:700;
     cursor:pointer;
-    margin:2px;
+    white-space:nowrap;
 }
-.btn-corrigir { background:#fef3c7; color:#92400e; }
-.btn-anular { background:#fee2e2; color:#991b1b; }
-.btn-eliminar { background:#e5e7eb; color:#374151; }
 
-.qr-modal-overlay {
+.btn-saida:hover {
+    background:#b91c1c;
+}
+
+.btn-iniciar {
+    background:#16a34a;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:12px 18px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+.btn-iniciar:hover {
+    background:#15803d;
+}
+
+.modal-overlay {
     display:none;
     position:fixed;
     inset:0;
-    background:rgba(15,23,42,0.65);
+    background:rgba(15,23,42,.65);
     z-index:9999;
     align-items:center;
     justify-content:center;
     padding:20px;
 }
 
-.qr-modal {
+.modal-card {
     width:100%;
     max-width:460px;
-    background:white;
+    background:#fff;
     border-radius:18px;
     padding:26px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
 }
 
-.qr-modal h3 {
+.modal-card h3 {
     margin:0 0 8px 0;
     font-size:22px;
 }
 
-.qr-modal p {
-    margin:0 0 22px 0;
+.modal-card p {
+    margin:0 0 18px 0;
     color:#6b7280;
 }
 
@@ -83,6 +137,12 @@ Frequências
     border:1px solid #bfdbfe;
 }
 
+.opcao-chegada {
+    background:#fff7ed;
+    color:#c2410c;
+    border:1px solid #fed7aa;
+}
+
 .opcao-estudo {
     background:#f0fdf4;
     color:#15803d;
@@ -95,11 +155,23 @@ Frequências
     text-align:center;
 }
 
+.opcao-saida-estudo {
+    background:#f0fdf4;
+    color:#15803d;
+    border:1px solid #bbf7d0;
+}
+
+.opcao-saida-solicitada {
+    background:#fff7ed;
+    color:#c2410c;
+    border:1px solid #fed7aa;
+}
+
 .modal-correcao-overlay {
     display:none;
     position:fixed;
     inset:0;
-    background:rgba(15,23,42,0.65);
+    background:rgba(15,23,42,.65);
     z-index:9998;
     align-items:center;
     justify-content:center;
@@ -121,7 +193,7 @@ Frequências
     margin-bottom:6px;
 }
 
-.modal-correcao input[type="time"] {
+.modal-correcao input[type=time] {
     width:100%;
     box-sizing:border-box;
     padding:12px;
@@ -145,73 +217,211 @@ Frequências
     cursor:pointer;
 }
 
-.btn-confirmar { background:#2563eb; color:white; }
-.btn-fechar { background:#e5e7eb; color:#374151; }
+.btn-confirmar {
+    background:#2563eb;
+    color:#fff;
+}
+
+.btn-fechar {
+    background:#e5e7eb;
+    color:#374151;
+}
 
 @media (max-width:640px) {
-    .encerrar-todos-wrapper { width:100%; }
-    .btn-encerrar-todos { width:100%; }
+    .encerrar-todos-wrapper {
+        width:100%;
+    }
+
+    .btn-encerrar-todos {
+        width:100%;
+    }
+
+    .aluno-fluxo-card {
+        align-items:stretch;
+    }
+
+    .btn-saida,
+    .btn-iniciar {
+        width:100%;
+    }
 }
 </style>
 
 {% if session.get('perfil') in ['administrador', 'administrador_geral'] %}
-<div
-    class="encerrar-todos-wrapper"
-    style="display:flex;justify-content:flex-end;margin-bottom:16px;"
->
-    <form
-        method="POST"
-        action="{{ url_for('frequencias.encerrar_todos_frequencias') }}"
-        onsubmit="return confirm('Tem a certeza que pretende encerrar todas as frequências em aberto?');"
-        style="margin:0;"
-    >
+<div class="encerrar-todos-wrapper"
+     style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+
+    <form method="POST"
+          action="{{ url_for('frequencias.encerrar_todos_frequencias') }}"
+          onsubmit="return confirm('Tem a certeza que pretende encerrar todas as frequências em aberto?');">
+
         <button type="submit" class="btn-encerrar-todos">
             Encerrar Todos os Alunos em Estudo
         </button>
+
     </form>
 </div>
 {% endif %}
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;margin-bottom:24px;">
+<!-- RESUMO -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+            gap:20px;margin-bottom:24px;">
+
     <div class="card" style="text-align:center;padding:24px;">
         <div style="font-size:14px;color:#6b7280;">Em estudo</div>
-        <div style="font-size:36px;font-weight:700;color:#22c55e;margin-top:10px;">{{ em_estudo }}</div>
+        <div style="font-size:36px;font-weight:700;color:#22c55e;margin-top:10px;">
+            {{ em_estudo }}
+        </div>
+    </div>
+
+    <div class="card" style="text-align:center;padding:24px;">
+        <div style="font-size:14px;color:#6b7280;">Em espera</div>
+        <div style="font-size:36px;font-weight:700;color:#f97316;margin-top:10px;">
+            {{ em_espera }}
+        </div>
     </div>
 
     <div class="card" style="text-align:center;padding:24px;">
         <div style="font-size:14px;color:#6b7280;">Concluídos</div>
-        <div style="font-size:36px;font-weight:700;color:#3b82f6;margin-top:10px;">{{ concluidos }}</div>
+        <div style="font-size:36px;font-weight:700;color:#3b82f6;margin-top:10px;">
+            {{ concluidos }}
+        </div>
     </div>
 
     <div class="card" style="text-align:center;padding:24px;">
         <div style="font-size:14px;color:#6b7280;">Total</div>
-        <div style="font-size:36px;font-weight:700;color:#8b5cf6;margin-top:10px;">{{ total }}</div>
+        <div style="font-size:36px;font-weight:700;color:#8b5cf6;margin-top:10px;">
+            {{ total }}
+        </div>
     </div>
+
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
+<!-- ALUNOS EM ESTUDO -->
+{% if em_estudo > 0 %}
 <div class="card" style="padding:24px;margin-bottom:24px;">
-    <h2 style="margin-bottom:20px;">Registo de Frequências</h2>
+
+    <h2 style="margin-bottom:6px;">
+        📚 Alunos em estudo
+    </h2>
+
+    <p style="color:#6b7280;margin-bottom:18px;">
+        Estes alunos estão actualmente a realizar uma sessão de estudo.
+        Para registar a saída, clique no botão correspondente ao aluno.
+    </p>
+
+    {% for item in historico %}
+        {% if item.eh_sessao_estudo_aberta %}
+
+        <div class="aluno-fluxo-card aluno-estudo-card">
+
+            <div>
+                <div class="aluno-fluxo-nome">
+                    {{ item.aluno.nome }}
+                </div>
+
+                <div class="aluno-fluxo-info">
+                    Código: {{ item.aluno.codigo }}
+                    · Início do estudo: {{ item.hora_inicio_estudo or item.hora_entrada or "—" }}
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn-saida"
+                    onclick="abrirModalSaida('{{ item.id }}', '{{ item.aluno.nome|e }}')">
+                🔴 Saída
+            </button>
+
+        </div>
+
+        {% endif %}
+    {% endfor %}
+
+</div>
+{% endif %}
+
+<!-- ALUNOS EM ESPERA -->
+{% if em_espera > 0 %}
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:6px;">
+        ⏳ Alunos em espera
+    </h2>
+
+    <p style="color:#6b7280;margin-bottom:18px;">
+        Estes alunos registaram a chegada, mas ainda não iniciaram o estudo.
+    </p>
+
+    {% for item in historico %}
+        {% if item.eh_chegada_em_espera %}
+
+        <div class="aluno-fluxo-card aluno-espera-card">
+
+            <div>
+                <div class="aluno-fluxo-nome">
+                    {{ item.aluno.nome }}
+                </div>
+
+                <div class="aluno-fluxo-info">
+                    Código: {{ item.aluno.codigo }}
+                    · Chegada: {{ item.hora_entrada or "—" }}
+                </div>
+            </div>
+
+            <form method="POST"
+                  action="{{ url_for('frequencias.iniciar_estudo', frequencia_id=item.id) }}"
+                  style="margin:0;">
+
+                <button type="submit" class="btn-iniciar">
+                    ▶ Iniciar estudo
+                </button>
+
+            </form>
+
+        </div>
+
+        {% endif %}
+    {% endfor %}
+
+</div>
+{% endif %}
+
+<!-- REGISTO DE ENTRADA -->
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:20px;">
+        Registo de entrada
+    </h2>
+
+    <p style="color:#6b7280;margin-bottom:20px;">
+        O código do aluno ou QR Code é utilizado apenas para efectuar um novo registo de entrada.
+    </p>
 
     {% if mensagem %}
-    <div style="background:#dcfce7;color:#166534;border:1px solid #86efac;padding:14px;border-radius:10px;margin-bottom:20px;">
+    <div style="background:#dcfce7;color:#166534;border:1px solid #86efac;
+                padding:14px;border-radius:10px;margin-bottom:20px;">
         <strong>{{ mensagem }}</strong>
     </div>
     {% endif %}
 
     {% if whatsapp_link %}
-    <a
-        href="{{ whatsapp_link }}"
-        target="_blank"
-        style="display:inline-flex;align-items:center;justify-content:center;padding:12px 20px;background:#25D366;color:white;text-decoration:none;border-radius:10px;margin-bottom:20px;font-weight:600;"
-    >
+    <a href="{{ whatsapp_link }}" target="_blank"
+       style="display:inline-flex;align-items:center;justify-content:center;
+              padding:12px 20px;background:#25D366;color:white;
+              text-decoration:none;border-radius:10px;margin-bottom:20px;
+              font-weight:600;">
         📱 Enviar WhatsApp
     </a>
     {% endif %}
 
     <form method="POST" id="form-frequencia">
-        <input type="hidden" id="modo_registo" name="modo_registo" value="horas">
+
+        <input type="hidden"
+               id="modo_registo"
+               name="modo_registo"
+               value="horas">
 
         <label style="font-weight:600;display:block;margin-bottom:8px;">
             Código do Aluno
@@ -223,40 +433,63 @@ Frequências
             name="codigo"
             placeholder="Ex: 10001"
             required
-            style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:16px;box-sizing:border-box;"
+            style="width:100%;padding:14px;border:2px solid #d1d5db;
+                   border-radius:10px;font-size:16px;box-sizing:border-box;"
         >
 
         <div style="display:flex;flex-wrap:wrap;gap:15px;margin-top:20px;">
-            <button type="button" onclick="abrirModalEscolha(document.getElementById('codigo').value)" style="flex:1;min-width:220px;background:#2563eb;color:white;border:none;padding:14px 24px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.25);">
-                ✅ Registar Entrada / Saída
+
+            <button type="button"
+                    onclick="abrirModalEscolha(document.getElementById('codigo').value)"
+                    style="flex:1;min-width:220px;background:#2563eb;color:white;
+                           border:none;padding:14px 24px;border-radius:10px;
+                           font-size:15px;font-weight:600;cursor:pointer;">
+
+                ✅ Registar Entrada
+
             </button>
 
-            <button
-                type="button"
-                onclick="iniciarCamera()"
-                style="flex:1;min-width:220px;background:#22c55e;color:white;border:none;padding:14px 24px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.25);"
-            >
+            <button type="button"
+                    onclick="iniciarCamera()"
+                    style="flex:1;min-width:220px;background:#22c55e;color:white;
+                           border:none;padding:14px 24px;border-radius:10px;
+                           font-size:15px;font-weight:600;cursor:pointer;">
+
                 📷 Ler QR Code
+
             </button>
+
         </div>
+
     </form>
 </div>
 
+<!-- LEITOR QR -->
 <div class="card" style="padding:24px;margin-bottom:24px;">
-    <h3 style="margin-bottom:10px;">📷 Leitor QR Code</h3>
+
+    <h3 style="margin-bottom:10px;">
+        📷 Leitor QR Code
+    </h3>
+
     <p style="color:#6b7280;margin-bottom:20px;">
-        Clique no botão verde para abrir a câmara e ler o cartão do aluno.
-        Depois poderá escolher se pretende registar apenas a presença ou as horas de estudo.
+        Clique em "Ler QR Code" para abrir a câmara e ler o cartão do aluno.
     </p>
 
     <div id="reader" style="width:100%;max-width:420px;margin:0 auto;"></div>
+
 </div>
 
+<!-- HISTÓRICO -->
 <div class="card" style="padding:24px;">
-    <h2 style="margin-bottom:20px;">Histórico de Frequências</h2>
+
+    <h2 style="margin-bottom:20px;">
+        Histórico de Frequências
+    </h2>
 
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;">
-        <table style="min-width:1050px;width:100%;white-space:nowrap;">
+
+        <table style="min-width:1100px;width:100%;white-space:nowrap;">
+
             <thead>
                 <tr>
                     <th>Código</th>
@@ -267,128 +500,336 @@ Frequências
                     <th>Duração</th>
                     <th style="min-width:260px;">Disciplinas</th>
                     <th>Estado</th>
+
                     {% if session.get('perfil') in ['administrador', 'administrador_geral'] %}
                     <th>Ações</th>
                     {% endif %}
+
                 </tr>
             </thead>
 
             <tbody>
+
             {% for item in historico %}
+
                 <tr>
+
                     <td>{{ item.aluno.codigo }}</td>
+
                     <td>{{ item.aluno.nome }}</td>
+
                     <td>{{ item.data }}</td>
+
                     <td>{{ item.hora_entrada or "—" }}</td>
+
                     <td>{{ item.hora_saida or "—" }}</td>
+
                     <td>{{ item.duracao_formatada }}</td>
 
-                    <td style="min-width:260px;max-width:420px;white-space:normal;line-height:1.5;">
-                        {% if item.eh_presenca %}
-                            Apenas presença
-                        {% else %}
-                            {{ item.disciplinas or "—" }}
-                        {% endif %}
-                    </td>
+                    <td style="min-width:260px;max-width:420px;
+                               white-space:normal;line-height:1.5;">
 
+                        {{ item.disciplinas or "—" }}
+
+                    </td>
                     <td>
+
                         {% if item.eh_presenca %}
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1d4ed8;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #bfdbfe;">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#eff6ff;color:#1d4ed8;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
                             👋 Presença
                         </span>
 
                         {% elif item.esta_anulada %}
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:#fee2e2;color:#991b1b;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #fecaca;">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#fee2e2;color:#991b1b;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
                             ⛔ Anulado
                         </span>
 
+                        {% elif item.eh_chegada_em_espera %}
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#fff7ed;color:#c2410c;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
+                            ⏳ Em espera
+                        </span>
+
+                        {% elif item.tipo_saida == 'SAIDA_SOLICITADA' %}
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#fef3c7;color:#92400e;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
+                            🚪 Saída solicitada
+                        </span>
+
                         {% elif item.hora_saida %}
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:#dbeafe;color:#1d4ed8;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #93c5fd;">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#dbeafe;color:#1d4ed8;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
                             🔵 Concluído
                         </span>
 
                         {% else %}
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#15803d;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #86efac;">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;
+                                     background:#dcfce7;color:#15803d;padding:6px 12px;
+                                     border-radius:999px;font-size:12px;font-weight:700;">
                             🟢 Em estudo
                         </span>
+
                         {% endif %}
+
                     </td>
 
                     {% if session.get('perfil') in ['administrador', 'administrador_geral'] %}
+
                     <td>
-                        {% if not item.eh_presenca and not item.esta_anulada and item.hora_saida %}
+
+                        {% if not item.eh_presenca
+                              and not item.esta_anulada
+                              and item.hora_saida
+                              and item.tipo_saida != 'SAIDA_SOLICITADA' %}
+
                         <button
                             type="button"
                             class="btn-acao btn-corrigir"
-                            onclick="abrirCorrecao('{{ item.id }}','{{ item.aluno.nome|e }}','{{ item.hora_entrada }}','{{ item.hora_saida }}')"
-                        >
+                            onclick="abrirCorrecao(
+                                '{{ item.id }}',
+                                '{{ item.aluno.nome|e }}',
+                                '{{ item.hora_entrada }}',
+                                '{{ item.hora_saida }}'
+                            )">
                             ✏️ Corrigir
                         </button>
 
-                        <form method="POST" action="{{ url_for('frequencias.anular_frequencia', frequencia_id=item.id) }}" style="display:inline;" onsubmit="return confirm('Tem a certeza que pretende ANULAR este registo? As horas serão devolvidas ao pacote do aluno.');">
-                            <button type="submit" class="btn-acao btn-anular">⛔ Anular</button>
+                        <form method="POST"
+                              action="{{ url_for('frequencias.anular_frequencia', frequencia_id=item.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm(
+                                  'Tem a certeza que pretende ANULAR este registo? As horas serão devolvidas ao pacote do aluno.'
+                              );">
+
+                            <button type="submit" class="btn-acao btn-anular">
+                                ⛔ Anular
+                            </button>
+
                         </form>
+
                         {% endif %}
 
                         {% if session.get('perfil') == 'administrador_geral' %}
-                        <form method="POST" action="{{ url_for('frequencias.eliminar_frequencia', frequencia_id=item.id) }}" style="display:inline;" onsubmit="return confirm('Tem a certeza que pretende ELIMINAR definitivamente este registo? Esta ação não pode ser desfeita.');">
-                            <button type="submit" class="btn-acao btn-eliminar">🗑️ Eliminar</button>
+
+                        <form method="POST"
+                              action="{{ url_for('frequencias.eliminar_frequencia', frequencia_id=item.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm(
+                                  'Tem a certeza que pretende ELIMINAR definitivamente este registo? As horas contabilizadas por este registo serão devolvidas ao pacote do aluno.'
+                              );">
+
+                            <button type="submit" class="btn-acao btn-eliminar">
+                                🗑️ Eliminar
+                            </button>
+
                         </form>
+
                         {% endif %}
+
                     </td>
+
                     {% endif %}
+
                 </tr>
+
             {% endfor %}
+
             </tbody>
+
         </table>
+
     </div>
+
 </div>
 
-<!-- Modal: escolha após QR Code -->
-<div id="modalEscolhaRegisto" class="qr-modal-overlay">
-    <div class="qr-modal">
-        <h3>O que pretende registar?</h3>
-        <p id="textoAlunoQR">Aluno identificado.</p>
+<!-- MODAL DE ENTRADA -->
+<div id="modalEscolhaRegisto" class="modal-overlay">
 
-        <button type="button" class="opcao-registo opcao-presenca" onclick="escolherPresenca()">
-            👋 Registar Presença
+    <div class="modal-card">
+
+        <h3>
+            O que pretende registar?
+        </h3>
+
+        <p id="textoAlunoQR">
+            Aluno identificado.
+        </p>
+
+        <button type="button"
+                class="opcao-registo opcao-presenca"
+                onclick="escolherPresenca()">
+
+            👋 Registar presença
+
             <div style="font-size:12px;font-weight:500;margin-top:5px;">
-                Apenas regista que o aluno esteve presente hoje. Não inicia horas de estudo.
+                Regista apenas a presença do aluno. Não inicia horas de estudo.
             </div>
+
         </button>
 
-        <button type="button" class="opcao-registo opcao-estudo" onclick="escolherHorasEstudo()">
-            📚 Registar Horas de Estudo
+        <button type="button"
+                class="opcao-registo opcao-chegada"
+                onclick="escolherChegada()">
+
+            🕐 Registar chegada
+
             <div style="font-size:12px;font-weight:500;margin-top:5px;">
-                Inicia ou continua o processo normal de registo das horas de estudo.
+                Regista a hora de chegada. O aluno ficará em espera até iniciar o estudo.
             </div>
+
         </button>
 
-        <button type="button" class="opcao-registo opcao-cancelar" onclick="fecharModalEscolha()">
+        <button type="button"
+                class="opcao-registo opcao-estudo"
+                onclick="escolherHorasEstudo()">
+
+            📚 Registar horas de estudo
+
+            <div style="font-size:12px;font-weight:500;margin-top:5px;">
+                Inicia imediatamente o registo das horas de estudo.
+            </div>
+
+        </button>
+
+        <button type="button"
+                class="opcao-registo opcao-cancelar"
+                onclick="fecharModalEscolha()">
+
             Cancelar
+
         </button>
+
     </div>
+
 </div>
 
-<!-- Modal: correção de horário -->
+<!-- MODAL DE SAÍDA -->
+<div id="modalEscolhaSaida" class="modal-overlay">
+
+    <div class="modal-card">
+
+        <h3>
+            Registar saída
+        </h3>
+
+        <p id="textoAlunoSaida">
+            Aluno identificado.
+        </p>
+
+        <form id="formSaida" method="POST">
+
+            <input type="hidden"
+                   id="tipo_saida"
+                   name="tipo_saida"
+                   value="">
+
+            <button type="submit"
+                    class="opcao-registo opcao-saida-estudo"
+                    onclick="document.getElementById('tipo_saida').value='ESTUDO_CONCLUIDO';">
+
+                🟢 Estudo concluído
+
+                <div style="font-size:12px;font-weight:500;margin-top:5px;">
+                    Regista a saída normal, calcula o tempo efectivo de estudo
+                    e permite enviar o WhatsApp.
+                </div>
+
+            </button>
+
+            <button type="submit"
+                    class="opcao-registo opcao-saida-solicitada"
+                    onclick="document.getElementById('tipo_saida').value='SAIDA_SOLICITADA';">
+
+                🟠 Saída solicitada
+
+                <div style="font-size:12px;font-weight:500;margin-top:5px;">
+                    Regista a saída e contabiliza exactamente 2 horas.
+                    Não envia WhatsApp.
+                </div>
+
+            </button>
+
+        </form>
+
+        <button type="button"
+                class="opcao-registo opcao-cancelar"
+                onclick="fecharModalSaida()">
+
+            Cancelar
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- MODAL DE CORREÇÃO -->
 <div id="modalCorrecao" class="modal-correcao-overlay">
+
     <div class="modal-correcao">
-        <h3 style="margin-top:0;">Corrigir horas</h3>
+
+        <h3 style="margin-top:0;">
+            Corrigir horas
+        </h3>
+
         <p id="nomeAlunoCorrecao" style="color:#6b7280;"></p>
 
         <form id="formCorrecao" method="POST">
-            <label for="horaEntradaCorrecao">Hora de entrada</label>
-            <input id="horaEntradaCorrecao" name="hora_entrada" type="time" required>
 
-            <label for="horaSaidaCorrecao">Hora de saída</label>
-            <input id="horaSaidaCorrecao" name="hora_saida" type="time" required>
+            <label for="horaEntradaCorrecao">
+                Hora de entrada
+            </label>
+
+            <input id="horaEntradaCorrecao"
+                   name="hora_entrada"
+                   type="time"
+                   required>
+
+            <label for="horaSaidaCorrecao">
+                Hora de saída
+            </label>
+
+            <input id="horaSaidaCorrecao"
+                   name="hora_saida"
+                   type="time"
+                   required>
 
             <div class="modal-botoes">
-                <button type="button" class="btn-fechar" onclick="fecharCorrecao()">Cancelar</button>
-                <button type="submit" class="btn-confirmar">Guardar correção</button>
+
+                <button type="button"
+                        class="btn-fechar"
+                        onclick="fecharCorrecao()">
+
+                    Cancelar
+
+                </button>
+
+                <button type="submit"
+                        class="btn-confirmar">
+
+                    Guardar correção
+
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
 <script>
@@ -396,12 +837,17 @@ let qrScanner = null;
 let codigoQRAtual = "";
 
 function iniciarCamera() {
+
     if (qrScanner) {
         return;
     }
 
     if (typeof Html5Qrcode === "undefined") {
-        alert("O leitor QR Code não foi carregado. Verifique a ligação à internet e tente novamente.");
+
+        alert(
+            "O leitor QR Code não foi carregado. Verifique a ligação à internet e tente novamente."
+        );
+
         return;
     }
 
@@ -410,76 +856,157 @@ function iniciarCamera() {
     qrScanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
+
         function(decodedText) {
+
             codigoQRAtual = decodedText.trim();
+
             document.getElementById("codigo").value = codigoQRAtual;
 
             qrScanner.stop().then(function() {
+
                 qrScanner.clear();
                 qrScanner = null;
+
                 abrirModalEscolha(codigoQRAtual);
+
             }).catch(function() {
+
                 qrScanner = null;
                 abrirModalEscolha(codigoQRAtual);
+
             });
+
         },
+
         function(errorMessage) {
-            // Erros normais de leitura são ignorados enquanto a câmara procura o QR Code.
+            // Erros normais de leitura são ignorados.
         }
+
     ).catch(function(error) {
+
         qrScanner = null;
-        alert("Não foi possível abrir a câmara. Verifique as permissões do navegador.");
+
+        alert(
+            "Não foi possível abrir a câmara. Verifique as permissões do navegador."
+        );
+
     });
 }
 
 function abrirModalEscolha(codigo) {
+
+    if (!codigo || !codigo.trim()) {
+
+        alert("Introduza primeiro o código do aluno.");
+
+        return;
+    }
+
     document.getElementById("textoAlunoQR").textContent =
-        "Código lido: " + codigo + ". Escolha o tipo de registo:";
+        "Código: " + codigo + ". Escolha o tipo de registo:";
+
     document.getElementById("modalEscolhaRegisto").style.display = "flex";
 }
 
 function fecharModalEscolha() {
+
     document.getElementById("modalEscolhaRegisto").style.display = "none";
+
     document.getElementById("modo_registo").value = "horas";
 }
 
 function escolherPresenca() {
+
     document.getElementById("modo_registo").value = "presenca";
+
     document.getElementById("modalEscolhaRegisto").style.display = "none";
+
+    document.getElementById("form-frequencia").submit();
+}
+
+function escolherChegada() {
+
+    document.getElementById("modo_registo").value = "chegada";
+
+    document.getElementById("modalEscolhaRegisto").style.display = "none";
+
     document.getElementById("form-frequencia").submit();
 }
 
 function escolherHorasEstudo() {
+
     document.getElementById("modo_registo").value = "horas";
+
     document.getElementById("modalEscolhaRegisto").style.display = "none";
+
     document.getElementById("form-frequencia").submit();
 }
 
+function abrirModalSaida(id, nome) {
+
+    document.getElementById("textoAlunoSaida").textContent =
+        "Aluno: " + nome;
+
+    document.getElementById("tipo_saida").value = "";
+
+    document.getElementById("formSaida").action =
+        "/frequencias/finalizar/" + id;
+
+    document.getElementById("modalEscolhaSaida").style.display = "flex";
+}
+
+function fecharModalSaida() {
+
+    document.getElementById("modalEscolhaSaida").style.display = "none";
+
+    document.getElementById("tipo_saida").value = "";
+}
+
 function abrirCorrecao(id, nome, entrada, saida) {
-    document.getElementById("nomeAlunoCorrecao").textContent = "Aluno: " + nome;
+
+    document.getElementById("nomeAlunoCorrecao").textContent =
+        "Aluno: " + nome;
+
     document.getElementById("horaEntradaCorrecao").value = entrada;
     document.getElementById("horaSaidaCorrecao").value = saida;
+
     document.getElementById("formCorrecao").action =
         "/frequencias/corrigir/" + id;
+
     document.getElementById("modalCorrecao").style.display = "flex";
 }
 
 function fecharCorrecao() {
+
     document.getElementById("modalCorrecao").style.display = "none";
 }
 
 window.addEventListener("click", function(event) {
-    const escolha = document.getElementById("modalEscolhaRegisto");
-    const correcao = document.getElementById("modalCorrecao");
 
-    if (event.target === escolha) {
+    const escolhaEntrada =
+        document.getElementById("modalEscolhaRegisto");
+
+    const escolhaSaida =
+        document.getElementById("modalEscolhaSaida");
+
+    const correcao =
+        document.getElementById("modalCorrecao");
+
+    if (event.target === escolhaEntrada) {
         fecharModalEscolha();
+    }
+
+    if (event.target === escolhaSaida) {
+        fecharModalSaida();
     }
 
     if (event.target === correcao) {
         fecharCorrecao();
     }
+
 });
 </script>
 
 {% endblock %}
+

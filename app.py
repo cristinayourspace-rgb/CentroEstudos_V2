@@ -114,6 +114,29 @@ with app.app_context():
                     text("ALTER TABLE turmas ADD COLUMN disciplinas TEXT")
                 )
 
+            # ----------------------------------------------------------
+            # MIGRAÇÃO DAS NOVAS COLUNAS DE FREQUÊNCIAS
+            # ----------------------------------------------------------
+            colunas_frequencias = [
+                coluna["name"]
+                for coluna in inspetor.get_columns("frequencias")
+            ]
+
+            if "tipo_registo" not in colunas_frequencias:
+                conexao.execute(
+                    text("ALTER TABLE frequencias ADD COLUMN tipo_registo VARCHAR(30)")
+                )
+
+            if "hora_inicio_estudo" not in colunas_frequencias:
+                conexao.execute(
+                    text("ALTER TABLE frequencias ADD COLUMN hora_inicio_estudo VARCHAR(10)")
+                )
+
+            if "tipo_saida" not in colunas_frequencias:
+                conexao.execute(
+                    text("ALTER TABLE frequencias ADD COLUMN tipo_saida VARCHAR(30)")
+                )
+
             # Reaproveita disciplinas já existentes nos horários para
             # preencher a nova seleção de disciplinas das turmas sem
             # perder dados históricos.
@@ -344,6 +367,8 @@ if __name__ == "__main__":
     app.run(
         debug=False
     )
+
+
 
 
 
