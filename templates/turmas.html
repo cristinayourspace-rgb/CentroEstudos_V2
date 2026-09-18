@@ -1,5 +1,249 @@
-{% extends "base.html" %}{% block titulo %}Turmas{% endblock %}{% block conteudo %}
-<style>.wrap{max-width:1200px;margin:auto}.head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}.actions{display:flex;gap:8px}.btn{padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:700}.primary{background:#2563eb;color:#fff}.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;margin-bottom:12px}.turma{border-top:1px solid #f1f5f9;padding:13px 0}.turma:first-child{border-top:0}.row{display:flex;justify-content:space-between;align-items:center;gap:12px}.nome{font-weight:800;color:#0f172a}.meta{color:#64748b;font-size:.85rem}.mini{color:#64748b;font-size:.82rem;margin-top:5px}.links{display:flex;gap:6px;flex-wrap:wrap}.link{padding:7px 9px;border-radius:8px;background:#f1f5f9;color:#334155;text-decoration:none;font-size:.8rem;font-weight:700}.empty{padding:35px;text-align:center;color:#64748b}</style>
-<div class="wrap"><div class="head"><div><h2 style="margin:0">Turmas</h2><p style="margin:4px 0;color:#64748b">Crie, atribua alunos e configure os horários num único local.</p></div><div class="actions"><a class="btn primary" href="{{ url_for('turma.criar_turma') }}">+ Criar Turma</a><a class="btn primary" href="{{ url_for('turma.atribuir_turma') }}">Atribuir Turmas</a></div></div>
-<div class="card">{% for t in turmas %}<div class="turma"><div class="row"><div><div class="nome">{{ t.nome }}</div><div class="meta">{{ t.escola }}{% if t.ano_escolar %} · {{ t.ano_escolar }}{% endif %}{% if t.diretor_turma %} · {{ t.diretor_turma }}{% endif %}</div><div class="mini">{{ alunos_por_turma.get((t.escola or '',t.nome or ''), [])|length }} aluno(s) · {{ disciplinas_da_turma(t)|length }} disciplina(s)</div></div><div class="links"><a class="link" href="{{ url_for('turma.turma_detalhe',id=t.id) }}">Abrir</a><a class="link" href="{{ url_for('turma.editar_turma',id=t.id) }}">Editar</a><a class="link" href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">Criar Horário</a></div></div></div>{% else %}<div class="empty">Ainda não existem turmas. Comece por criar a primeira.</div>{% endfor %}</div></div>
+{% extends "base.html" %}
+{% block titulo %}Turmas{% endblock %}
+
+{% block conteudo %}
+
+<style>
+.wrap {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 12px;
+}
+
+.escola {
+    margin-bottom: 28px;
+}
+
+.escola:last-child {
+    margin-bottom: 0;
+}
+
+.escola-titulo {
+    background: #f1f5f9;
+    border-left: 4px solid #2563eb;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.turma {
+    border-top: 1px solid #f1f5f9;
+    padding: 13px 0;
+}
+
+.turma:first-child {
+    border-top: 0;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.nome {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.meta {
+    color: #64748b;
+    font-size: .85rem;
+}
+
+.mini {
+    color: #64748b;
+    font-size: .82rem;
+    margin-top: 5px;
+}
+
+.links {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.link {
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #334155;
+    text-decoration: none;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.empty {
+    padding: 35px;
+    text-align: center;
+    color: #64748b;
+}
+
+@media (max-width: 700px) {
+    .head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .links {
+        margin-top: 8px;
+    }
+}
+</style>
+
+<div class="wrap">
+
+    <div class="head">
+        <div>
+            <h2 style="margin:0">Turmas</h2>
+            <p style="margin:4px 0;color:#64748b">
+                Crie, atribua alunos e configure os hor?rios num ?nico local.
+            </p>
+        </div>
+
+        <div class="actions">
+            <a class="btn primary" href="{{ url_for('turma.criar_turma') }}">
+                + Criar Turma
+            </a>
+
+            <a class="btn primary" href="{{ url_for('turma.atribuir_turma') }}">
+                Atribuir Turmas
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+
+        {% set escola_atual = namespace(nome=None) %}
+
+        {% for t in turmas %}
+
+            {% if escola_atual.nome != (t.escola or "Sem escola") %}
+
+                {% if escola_atual.nome is not none %}
+                    </div>
+                {% endif %}
+
+                {% set escola_atual.nome = t.escola or "Sem escola" %}
+
+                <div class="escola">
+
+                    <div class="escola-titulo">
+                        {{ escola_atual.nome }}
+                    </div>
+
+            {% endif %}
+
+            <div class="turma">
+
+                <div class="row">
+
+                    <div>
+                        <div class="nome">
+                            {{ t.nome }}
+                        </div>
+
+                        <div class="meta">
+                            {% if t.ano_escolar %}
+                                {{ t.ano_escolar }}
+                            {% endif %}
+
+                            {% if t.diretor_turma %}
+                                ? {{ t.diretor_turma }}
+                            {% endif %}
+                        </div>
+
+                        <div class="mini">
+                            {{ alunos_por_turma.get((t.escola or '', t.nome or ''), [])|length }}
+                            aluno(s)
+                            ?
+                            {{ disciplinas_da_turma(t)|length }}
+                            disciplina(s)
+                        </div>
+                    </div>
+
+                    <div class="links">
+
+                        <a class="link"
+                           href="{{ url_for('turma.turma_detalhe', id=t.id) }}">
+                            Abrir
+                        </a>
+
+                        <a class="link"
+                           href="{{ url_for('turma.editar_turma', id=t.id) }}">
+                            Editar
+                        </a>
+
+                        <a class="link"
+                           href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">
+                            Criar Hor?rio
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Ainda n?o existem turmas. Comece por criar a primeira.
+            </div>
+
+        {% endfor %}
+
+        {% if escola_atual.nome is not none %}
+            </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
 {% endblock %}

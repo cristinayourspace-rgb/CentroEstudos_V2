@@ -278,8 +278,11 @@ def inicio():
     alunos_em_estudo = Frequencia.query.filter(
         Frequencia.data == hoje,
         Frequencia.hora_saida.is_(None),
-        Frequencia.disciplinas != "PRESENÇA",
-        db.or_(Frequencia.observacoes.is_(None), ~Frequencia.observacoes.startswith("[ANULADO]"))
+        Frequencia.tipo_registo == "ESTUDO",
+        db.or_(
+            Frequencia.observacoes.is_(None),
+            ~Frequencia.observacoes.startswith("[ANULADO]")
+        )
     ).with_entities(
         Frequencia.aluno_id
     ).distinct().count()

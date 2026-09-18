@@ -299,95 +299,6 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<!-- ALUNOS EM ESTUDO -->
-{% if em_estudo > 0 %}
-<div class="card" style="padding:24px;margin-bottom:24px;">
-
-    <h2 style="margin-bottom:6px;">
-        📚 Alunos em estudo
-    </h2>
-
-    <p style="color:#6b7280;margin-bottom:18px;">
-        Estes alunos estão actualmente a realizar uma sessão de estudo.
-        Para registar a saída, clique no botão correspondente ao aluno.
-    </p>
-
-    {% for item in historico %}
-        {% if item.eh_sessao_estudo_aberta %}
-
-        <div class="aluno-fluxo-card aluno-estudo-card">
-
-            <div>
-                <div class="aluno-fluxo-nome">
-                    {{ item.aluno.nome }}
-                </div>
-
-                <div class="aluno-fluxo-info">
-                    Código: {{ item.aluno.codigo }}
-                    · Início do estudo: {{ item.hora_inicio_estudo or item.hora_entrada or "—" }}
-                </div>
-            </div>
-
-            <button type="button"
-                    class="btn-saida"
-                    onclick="abrirModalSaida('{{ item.id }}', '{{ item.aluno.nome|e }}')">
-                🔴 Saída
-            </button>
-
-        </div>
-
-        {% endif %}
-    {% endfor %}
-
-</div>
-{% endif %}
-
-<!-- ALUNOS EM ESPERA -->
-{% if em_espera > 0 %}
-<div class="card" style="padding:24px;margin-bottom:24px;">
-
-    <h2 style="margin-bottom:6px;">
-        ⏳ Alunos em espera
-    </h2>
-
-    <p style="color:#6b7280;margin-bottom:18px;">
-        Estes alunos registaram a chegada, mas ainda não iniciaram o estudo.
-    </p>
-
-    {% for item in historico %}
-        {% if item.eh_chegada_em_espera %}
-
-        <div class="aluno-fluxo-card aluno-espera-card">
-
-            <div>
-                <div class="aluno-fluxo-nome">
-                    {{ item.aluno.nome }}
-                </div>
-
-                <div class="aluno-fluxo-info">
-                    Código: {{ item.aluno.codigo }}
-                    · Chegada: {{ item.hora_entrada or "—" }}
-                </div>
-            </div>
-
-            <form method="POST"
-                  action="{{ url_for('frequencias.iniciar_estudo', frequencia_id=item.id) }}"
-                  style="margin:0;">
-
-                <button type="submit" class="btn-iniciar">
-                    ▶ Iniciar estudo
-                </button>
-
-            </form>
-
-        </div>
-
-        {% endif %}
-    {% endfor %}
-
-</div>
-{% endif %}
-
 <!-- REGISTO DE ENTRADA -->
 <div class="card" style="padding:24px;margin-bottom:24px;">
 
@@ -464,6 +375,97 @@
     </form>
 </div>
 
+
+<!-- ALUNOS EM ESTUDO -->
+{% if em_estudo > 0 %}
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:6px;">
+        📚 Alunos em estudo
+    </h2>
+
+    <p style="color:#6b7280;margin-bottom:18px;">
+        Estes alunos estão actualmente a realizar uma sessão de estudo.
+        Para registar a saída, clique no botão correspondente ao aluno.
+    </p>
+
+    {% for item in historico %}
+        {% if item.eh_sessao_estudo_aberta %}
+
+        <div class="aluno-fluxo-card aluno-estudo-card">
+
+            <div>
+                <div class="aluno-fluxo-nome">
+                    {{ item.aluno.nome }}
+                </div>
+
+                <div class="aluno-fluxo-info">
+                    Código: {{ item.aluno.codigo }}
+                    · Início do estudo: {{ item.hora_inicio_estudo or item.hora_entrada or "—" }}
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn-saida"
+                    onclick="abrirModalSaida('{{ item.id }}', '{{ item.aluno.nome|e }}')">
+                🔴 Saída
+            </button>
+
+        </div>
+
+        {% endif %}
+    {% endfor %}
+
+</div>
+{% endif %}
+
+
+<!-- ALUNOS EM ESPERA -->
+{% if em_espera > 0 %}
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:6px;">
+        ⏳ Alunos em espera
+    </h2>
+
+    <p style="color:#6b7280;margin-bottom:18px;">
+        Estes alunos registaram a chegada, mas ainda não iniciaram o estudo.
+    </p>
+
+    {% for item in historico %}
+        {% if item.eh_chegada_em_espera %}
+
+        <div class="aluno-fluxo-card aluno-espera-card">
+
+            <div>
+                <div class="aluno-fluxo-nome">
+                    {{ item.aluno.nome }}
+                </div>
+
+                <div class="aluno-fluxo-info">
+                    Código: {{ item.aluno.codigo }}
+                    · Chegada: {{ item.hora_entrada or "—" }}
+                </div>
+            </div>
+
+            <form method="POST"
+                  action="{{ url_for('frequencias.iniciar_estudo', frequencia_id=item.id) }}"
+                  style="margin:0;">
+
+                <button type="submit" class="btn-iniciar">
+                    ▶ Iniciar estudo
+                </button>
+
+            </form>
+
+        </div>
+
+        {% endif %}
+    {% endfor %}
+
+</div>
+{% endif %}
+
 <!-- LEITOR QR -->
 <div class="card" style="padding:24px;margin-bottom:24px;">
 
@@ -486,9 +488,68 @@
         Histórico de Frequências
     </h2>
 
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;">
 
-        <table style="min-width:1100px;width:100%;white-space:nowrap;">
+<style>
+.tabela-frequencias-scroll-top,
+.tabela-frequencias-scroll-bottom {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabela-frequencias-scroll-top {
+    height: 18px;
+    margin-bottom: 6px;
+}
+
+.tabela-frequencias-scroll-top > div {
+    height: 1px;
+    min-width: 1100px;
+}
+
+.tabela-frequencias-scroll-bottom {
+    border-radius: 12px;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const topo = document.querySelector(".tabela-frequencias-scroll-top");
+    const baixo = document.querySelector(".tabela-frequencias-scroll-bottom");
+    const tabela = baixo ? baixo.querySelector("table") : null;
+
+    if (!topo || !baixo || !tabela) return;
+
+    function ajustarLargura() {
+        const largura = tabela.scrollWidth;
+        const interiorTopo = topo.querySelector("div");
+
+        if (interiorTopo) {
+            interiorTopo.style.width = largura + "px";
+        }
+    }
+
+    ajustarLargura();
+    window.addEventListener("resize", ajustarLargura);
+
+    topo.addEventListener("scroll", function () {
+        baixo.scrollLeft = topo.scrollLeft;
+    });
+
+    baixo.addEventListener("scroll", function () {
+        topo.scrollLeft = baixo.scrollLeft;
+    });
+});
+</script>
+
+    <div class="tabela-frequencias-wrapper">
+
+        <div class="tabela-frequencias-scroll-top">
+            <div style="width:1100px;height:1px;"></div>
+        </div>
+
+        <div class="tabela-frequencias-scroll-bottom">
+            <table style="min-width:1100px;width:100%;white-space:nowrap;">
 
             <thead>
                 <tr>
@@ -649,7 +710,8 @@
 
             </tbody>
 
-        </table>
+            </table>
+        </div>
 
     </div>
 
