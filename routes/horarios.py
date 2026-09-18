@@ -415,6 +415,22 @@ def novo_horario():
     turma_obj = Turma.query.get(turma_id) if turma_id else None
     disciplinas_turma = disciplinas_da_turma(turma_obj) if turma_obj else []
 
+    # Se a turma já possui horário, abrir diretamente a edição
+    # do horário semanal completo.
+    if request.method == "GET" and turma_obj:
+        horario_existente = HorarioTurma.query.filter_by(
+            centro_escolar=turma_obj.escola,
+            turma=turma_obj.nome
+        ).first()
+
+        if horario_existente:
+            return redirect(
+                url_for(
+                    "horarios.editar_horario",
+                    id=horario_existente.id
+                )
+            )
+
     if request.method == "POST":
 
         centro_escolar = request.form.get(
@@ -483,108 +499,40 @@ def novo_horario():
 def editar_horario(id):
 
     if session.get("perfil") == "colaborador":
-
-        return render_template(
-            "acesso_negado.html"
-        )
+        return render_template("acesso_negado.html")
 
     horario = HorarioTurma.query.get_or_404(id)
 
+    escola_original = horario.centro_escolar
+    turma_original = horario.turma
+
     horarios_turma = HorarioTurma.query.filter_by(
-        centro_escolar=horario.centro_escolar,
-        turma=horario.turma
+        centro_escolar=escola_original,
+        turma=turma_original
     ).all()
 
     escolas, turmas = obter_escolas_e_turmas()
-    turma_obj = Turma.query.filter_by(nome=horario.turma, escola=horario.centro_escolar).first()
-    disciplinas_turma = disciplinas_da_turma(turma_obj) if turma_obj else []
 
-    if request.method == "POST":
+    turma_obj = Turma.query.filter_by(
+        nome=turma_original,
+        escola=escola_original
+    ).first()
 
-        centro_escolar = request.form.get(
-            "centro_escolar",
-            ""
-        ).strip()
+    disciplinas_turma = (
+        disciplinas_da_turma(turma_obj)
+        if turma_obj
+        else []
+    )
 
-        turma = request.form.get(
-            "turma",
-            ""
-        ).strip()
-
-        dados_dias, erros = recolher_dados_formulario()
-
-        if not centro_escolar:
-            erros.insert(0, "Preencha o Centro Escolar.")
-
-        if not turma:
-            erros.insert(0, "Preencha a Turma.")
-
-        if not dados_dias and not erros:
-            erros.append(
-                "Ative pelo menos um dia e preencha-o completamente."
-            )
-
-        if erros:
-
-            return render_template(
-                "horario_form.html",
-                horario=horario,
-                horarios_turma=horarios_turma,
-                escolas=escolas,
-                turmas=turmas,
-                dias_semana=DIAS_SEMANA,
-                dados_existentes=preparar_dados_para_formulario(),
-                erro=" ".join(erros),
-                turma_obj=turma_obj,
-                disciplinas_turma=disciplinas_turma,
-            )
-
-        guardar_horario_semanal(
-            centro_escolar,
-            turma,
-            dados_dias
-        )
-
-        # Se a escola/turma foram alteradas, os registos antigos
-        # foram eliminados pelo guardar_horario_semanal do novo grupo
-        # apenas quando este grupo já existia. Os registos antigos são
-        # tratados abaixo.
-        grupo_antigo = HorarioTurma.query.filter_by(
-            centro_escolar=horario.centro_escolar,
-            turma=horario.turma
-        ).all()
-
-        # A referência "horario" pode já ter sido eliminada pelo
-        # guardar_horario_semanal. Como o objetivo é editar o grupo
-        # inteiro, garantimos que nenhum registo antigo permanece.
-        for item in grupo_antigo:
-
-            if (
-                item.centro_escolar != centro_escolar
-                or item.turma != turma
-            ):
-
-                db.session.delete(item)
-
-        db.session.commit()
-
-        return redirect(
-            url_for("horarios.horarios")
-        )
-
-    # Agrupa os dados existentes para preencher o formulário.
     dados_existentes = {}
 
     for dia in DIAS_SEMANA:
-
         itens = [
-            h
-            for h in horarios_turma
+            h for h in horarios_turma
             if h.dia_semana == dia
         ]
 
         if itens:
-
             dados_existentes[dia] = {
                 "hora_inicio": itens[0].hora_inicio,
                 "hora_fim": itens[0].hora_fim,
@@ -599,6 +547,89 @@ def editar_horario(id):
                     )
                 ]
             }
+
+    if request.method == "POST":
+
+        centro_escolar = request.form.get(
+            "centro_escolar", ""
+        ).strip()
+
+        turma = request.form.get(
+            "turma", ""
+        ).strip()
+
+        dados_dias, erros = recolher_dados_formulario()
+
+        if not centro_escolar:
+            erros.insert(
+                0,
+                "Preencha o Centro Escolar."
+            )
+
+        if not turma:
+            erros.insert(
+                0,
+                "Preencha a Turma."
+            )
+
+        if not dados_dias and not erros:
+            erros.append(
+                "Ative pelo menos um dia e preencha-o completamente."
+            )
+
+        turma_obj = Turma.query.filter_by(
+            nome=turma,
+            escola=centro_escolar
+        ).first()
+
+        disciplinas_turma = (
+            disciplinas_da_turma(turma_obj)
+            if turma_obj
+            else []
+        )
+
+        if erros:
+            return render_template(
+                "horario_form.html",
+                horario=horario,
+                horarios_turma=horarios_turma,
+                escolas=escolas,
+                turmas=turmas,
+                dias_semana=DIAS_SEMANA,
+                dados_existentes=dados_existentes,
+                erro=" ".join(erros),
+                turma_obj=turma_obj,
+                disciplinas_turma=disciplinas_turma,
+            )
+
+        grupo_antigo = HorarioTurma.query.filter_by(
+            centro_escolar=escola_original,
+            turma=turma_original
+        ).all()
+
+        for item in grupo_antigo:
+            db.session.delete(item)
+
+        db.session.flush()
+
+        for dia in dados_dias:
+            for disciplina in dia["disciplinas"]:
+                db.session.add(
+                    HorarioTurma(
+                        centro_escolar=centro_escolar,
+                        turma=turma,
+                        dia_semana=dia["dia_semana"],
+                        hora_inicio=dia["hora_inicio"],
+                        hora_fim=dia["hora_fim"],
+                        disciplina=disciplina
+                    )
+                )
+
+        db.session.commit()
+
+        return redirect(
+            url_for("horarios.horarios")
+        )
 
     return render_template(
         "horario_form.html",
