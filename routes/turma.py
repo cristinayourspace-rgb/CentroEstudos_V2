@@ -99,12 +99,18 @@ def turmas():
     for lista in por_turma.values():
         lista.sort(key=lambda a: chave_texto(a.nome))
 
+    turmas_com_horario = {
+        (h.centro_escolar, h.turma)
+        for h in HorarioTurma.query.all()
+    }
+
     return render_template(
         "turmas.html",
         turmas=todas,
         alunos_por_turma=por_turma,
         disciplinas_da_turma=disciplinas_da_turma,
         dias_semana=DIAS_SEMANA,
+        turmas_com_horario=turmas_com_horario,
     )
 
 

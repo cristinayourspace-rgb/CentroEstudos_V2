@@ -142,7 +142,7 @@
         <div>
             <h2 style="margin:0">Turmas</h2>
             <p style="margin:4px 0;color:#64748b">
-                Crie, atribua alunos e configure os hor?rios num ?nico local.
+                Crie, atribua alunos e configure os horários num único local.
             </p>
         </div>
 
@@ -194,14 +194,14 @@
                             {% endif %}
 
                             {% if t.diretor_turma %}
-                                ? {{ t.diretor_turma }}
+                                • {{ t.diretor_turma }}
                             {% endif %}
                         </div>
 
                         <div class="mini">
                             {{ alunos_por_turma.get((t.escola or '', t.nome or ''), [])|length }}
                             aluno(s)
-                            ?
+                             •
                             {{ disciplinas_da_turma(t)|length }}
                             disciplina(s)
                         </div>
@@ -216,13 +216,20 @@
 
                         <a class="link"
                            href="{{ url_for('turma.editar_turma', id=t.id) }}">
-                            Editar
+                            Editar Turma
                         </a>
 
+                        {% if (t.escola, t.nome) in turmas_com_horario %}
                         <a class="link"
                            href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">
-                            Criar Hor?rio
+                            Editar Horário
                         </a>
+{% else %}
+                        <a class="link"
+                           href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">
+                            Criar Horário
+                        </a>
+{% endif %}
 
                     </div>
 
@@ -233,7 +240,7 @@
         {% else %}
 
             <div class="empty">
-                Ainda n?o existem turmas. Comece por criar a primeira.
+                Ainda não existem turmas. Comece por criar a primeira.
             </div>
 
         {% endfor %}
