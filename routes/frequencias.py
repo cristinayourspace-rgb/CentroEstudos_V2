@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
@@ -271,13 +271,120 @@ def preparar_historico_frequencias(historico):
 
 
 def obter_historico():
-    historico = Frequencia.query.order_by(
+
+    data_atual = agora_portugal().strftime(
+        "%d/%m/%Y"
+    )
+
+    historico = Frequencia.query.filter_by(
+        data=data_atual
+    ).order_by(
         Frequencia.id.desc()
     ).all()
 
     preparar_historico_frequencias(historico)
 
     return historico
+
+
+
+def obter_alunos_infrequentes():
+
+    hoje = agora_portugal().date()
+
+    # Última entrada de cada aluno.
+    ultimas_entradas = {}
+
+    frequencias = Frequencia.query.all()
+
+    for frequencia in frequencias:
+
+        if esta_anulada(frequencia):
+            continue
+
+        # Apenas registos que representam uma entrada.
+        if not frequencia.hora_entrada:
+            continue
+
+        if not frequencia.aluno_id:
+            continue
+
+        try:
+            data_entrada = datetime.strptime(
+                frequencia.data,
+                "%d/%m/%Y"
+            ).date()
+
+        except (TypeError, ValueError):
+            continue
+
+        anterior = ultimas_entradas.get(
+            frequencia.aluno_id
+        )
+
+        if anterior is None or data_entrada > anterior:
+            ultimas_entradas[
+                frequencia.aluno_id
+            ] = data_entrada
+
+    # Carrega uma vez os dias não letivos.
+    eventos_nao_letivos = {
+        evento.data
+        for evento in Evento.query.filter_by(
+            nao_letivo=True
+        ).all()
+    }
+
+    resultado = []
+
+    alunos = Aluno.query.filter_by(
+        ativo=True
+    ).all()
+
+    for aluno in alunos:
+
+        ultima_entrada = ultimas_entradas.get(
+            aluno.id
+        )
+
+        # Alunos sem qualquer entrada anterior
+        # não entram nesta lista.
+        if not ultima_entrada:
+            continue
+
+        dias_ausencia = 0
+
+        dia = ultima_entrada + timedelta(days=1)
+
+        while dia <= hoje:
+
+            # Segunda a sexta.
+            if dia.weekday() < 5:
+
+                data_bd = dia.strftime(
+                    "%Y-%m-%d"
+                )
+
+                # Sábados, domingos e dias não letivos
+                # não contam.
+                if data_bd not in eventos_nao_letivos:
+                    dias_ausencia += 1
+
+            dia += timedelta(days=1)
+
+        # Mais de 3 dias de funcionamento.
+        if dias_ausencia > 3:
+
+            resultado.append({
+                "nome": aluno.nome,
+                "dias_ausencia": dias_ausencia
+            })
+
+    resultado.sort(
+        key=lambda item: item["nome"].casefold()
+    )
+
+    return resultado
 
 
 def dia_permite_frequencia():
@@ -355,7 +462,8 @@ def frequencias():
                 em_estudo=resumo["em_estudo"],
                 em_espera=resumo["em_espera"],
                 concluidos=resumo["concluidos"],
-                total=resumo["total"]
+                total=resumo["total"],
+                alunos_infrequentes=obter_alunos_infrequentes()
             )
 
         codigo = request.form.get(
@@ -530,7 +638,8 @@ def frequencias():
         em_estudo=resumo["em_estudo"],
         em_espera=resumo["em_espera"],
         concluidos=resumo["concluidos"],
-        total=resumo["total"]
+        total=resumo["total"],
+        alunos_infrequentes=obter_alunos_infrequentes()
     )
 
 

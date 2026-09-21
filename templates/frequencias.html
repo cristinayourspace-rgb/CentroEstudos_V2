@@ -481,6 +481,99 @@
 
 </div>
 
+<!-- ALUNOS COM AUSÊNCIA -->
+<div
+    class="card"
+    style="
+        padding:24px;
+        margin-bottom:24px;
+    "
+>
+
+    <h2
+        style="
+            margin-bottom:8px;
+        "
+    >
+        Alunos com mais de 3 dias de ausência
+    </h2>
+
+    <p
+        style="
+            color:#6b7280;
+            margin-bottom:20px;
+        "
+    >
+        Alunos ativos sem registo de entrada há mais de
+        3 dias de funcionamento do Centro.
+        Sábados, domingos e dias não letivos não contam.
+    </p>
+
+    {% if alunos_infrequentes %}
+
+    <div style="overflow-x:auto;">
+
+        <table style="width:100%;">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Aluno
+                    </th>
+
+                    <th style="text-align:center;">
+                        Dias de ausência
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for aluno in alunos_infrequentes %}
+
+                <tr>
+
+                    <td style="font-weight:600;">
+                        {{ aluno.nome }}
+                    </td>
+
+                    <td style="text-align:center;">
+                        {{ aluno.dias_ausencia }} dias
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div
+        style="
+            padding:16px;
+            background:#f0fdf4;
+            color:#166534;
+            border:1px solid #bbf7d0;
+            border-radius:12px;
+        "
+    >
+        Não há alunos com mais de 3 dias de ausência.
+    </div>
+
+    {% endif %}
+
+</div>
+
+
 <!-- HISTÓRICO -->
 <div class="card" style="padding:24px;">
 

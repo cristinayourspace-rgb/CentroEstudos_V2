@@ -289,6 +289,119 @@
 
         </header>
 
+        {% if alerta_testes_semana %}
+
+        <div
+            id="alerta-testes-semana"
+            style="
+                position:fixed;
+                inset:0;
+                z-index:9999;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                padding:20px;
+                background:rgba(15,23,42,.55);
+            "
+        >
+
+            <div
+                style="
+                    width:100%;
+                    max-width:460px;
+                    background:#fff;
+                    border-radius:20px;
+                    padding:30px;
+                    box-shadow:0 20px 60px rgba(0,0,0,.25);
+                    text-align:center;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:42px;
+                        margin-bottom:12px;
+                    "
+                >
+                    📚
+                </div>
+
+                <h2
+                    style="
+                        font-size:24px;
+                        font-weight:700;
+                        color:#1f2937;
+                        margin-bottom:10px;
+                    "
+                >
+                    Há testes esta semana
+                </h2>
+
+                <p
+                    style="
+                        color:#6b7280;
+                        font-size:16px;
+                        line-height:1.5;
+                        margin-bottom:24px;
+                    "
+                >
+                    Consulte o calendário para ver os
+                    testes marcados para esta semana.
+                </p>
+
+                <div
+                    style="
+                        display:flex;
+                        gap:10px;
+                        justify-content:center;
+                        flex-wrap:wrap;
+                    "
+                >
+
+                    <a
+                        href="{{ url_for('calendario.calendario') }}"
+                        style="
+                            padding:12px 20px;
+                            background:#2563eb;
+                            color:#fff;
+                            text-decoration:none;
+                            border-radius:10px;
+                            font-weight:600;
+                        "
+                    >
+                        Consultar calendário
+                    </a>
+
+                    <button
+                        type="button"
+                        onclick="
+                            document
+                            .getElementById(
+                                'alerta-testes-semana'
+                            )
+                            .remove()
+                        "
+                        style="
+                            padding:12px 20px;
+                            background:#f3f4f6;
+                            color:#374151;
+                            border:none;
+                            border-radius:10px;
+                            font-weight:600;
+                            cursor:pointer;
+                        "
+                    >
+                        Fechar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
         <main class="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-8 pb-8">
 
             {% block conteudo %}

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import (
     Flask,
     render_template,
@@ -23,6 +23,7 @@ from models.evento import Evento
 from models.configuracao_centro import ConfiguracaoCentro
 from models.horario_turma import HorarioTurma
 from models.turma import Turma
+from models.alerta_utilizador import AlertaUtilizador
 
 from routes.alunos import alunos_bp
 from routes.frequencias import frequencias_bp
@@ -53,8 +54,14 @@ def inject_configuracao():
 
     configuracao = ConfiguracaoCentro.query.first()
 
+    alerta_testes_semana = session.pop(
+        "alerta_testes_semana",
+        False
+    )
+
     return dict(
-        configuracao_global=configuracao
+        configuracao_global=configuracao,
+        alerta_testes_semana=alerta_testes_semana
     )
 
 app.register_blueprint(alunos_bp)
@@ -66,6 +73,69 @@ app.register_blueprint(calendario_bp)
 app.register_blueprint(admins_bp)
 app.register_blueprint(configuracoes_bp)
 app.register_blueprint(horarios_bp)
+
+def verificar_alerta_testes_semana(utilizador_id):
+
+    hoje = datetime.now().date()
+
+    # Segunda=0, terça=1, quarta=2, quinta=3.
+    # Sexta-feira e fim de semana não apresentam o alerta.
+    if hoje.weekday() > 3:
+        return False
+
+    inicio_semana = (
+        hoje - timedelta(days=hoje.weekday())
+    )
+
+    fim_semana = inicio_semana + timedelta(days=4)
+
+    testes = Teste.query.all()
+
+    existe_teste = False
+
+    for teste in testes:
+
+        try:
+            # Os testes do Centro estão guardados em YYYY-MM-DD.
+            data_teste = datetime.strptime(
+                teste.data_teste,
+                "%Y-%m-%d"
+            ).date()
+
+        except (TypeError, ValueError):
+            continue
+
+        if inicio_semana <= data_teste <= fim_semana:
+            existe_teste = True
+            break
+
+    if not existe_teste:
+        return False
+
+    data_alerta = hoje.strftime("%Y-%m-%d")
+
+    ja_mostrado = AlertaUtilizador.query.filter_by(
+        utilizador_id=utilizador_id,
+        tipo="testes_semana",
+        data=data_alerta
+    ).first()
+
+    if ja_mostrado:
+        return False
+
+    db.session.add(
+        AlertaUtilizador(
+            utilizador_id=utilizador_id,
+            tipo="testes_semana",
+            data=data_alerta
+        )
+    )
+
+    db.session.commit()
+
+    return True
+
+
 def e_admin_geral():
     return session.get("perfil") == "administrador_geral"
 
@@ -340,6 +410,12 @@ def login():
             session["utilizador_id"] = utilizador.id
             session["nome"] = utilizador.nome
             session["perfil"] = utilizador.perfil
+
+            session["alerta_testes_semana"] = (
+                verificar_alerta_testes_semana(
+                    utilizador.id
+                )
+            )
 
             return redirect(
                 url_for("inicio")
