@@ -180,7 +180,7 @@
                 {% if atribuicao_salas.configurada %}
                 <form method="POST"
                       action="{{ url_for('turma.eliminar_atribuicao_salas') }}"
-                      onsubmit="return confirm('Eliminar toda a atribui????o semanal de salas?')">
+                      onsubmit="return confirm('Eliminar toda a atribuição semanal de salas?')">
                     <button type="submit"
                             class="btn"
                             style="background:#fee2e2;color:#991b1b;border:0;">
@@ -232,7 +232,7 @@
         {% else %}
 
         <div style="padding:20px;text-align:center;color:#64748b;background:#f8fafc;border-radius:12px;">
-            Ainda não existe uma atribui????o de salas.
+            Ainda não existe uma atribuição de salas.
         </div>
 
         {% endif %}
