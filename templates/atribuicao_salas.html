@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block titulo %}Atribuição de Salas{% endblock %}
+
+{% block conteudo %}
+
+<style>
+.wrap-salas{max-width:1400px;margin:0 auto}
+.card-salas{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 4px 14px rgba(15,23,42,.05);margin-bottom:18px}
+.head-salas{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}
+.btn-sala{padding:10px 14px;border-radius:10px;border:0;text-decoration:none;font-weight:800;cursor:pointer}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-neutral{background:#f1f5f9;color:#334155}
+.btn-danger{background:#fee2e2;color:#991b1b}
+.erro-salas{background:#fee2e2;color:#991b1b;border-radius:12px;padding:12px;margin-bottom:15px}
+.dia-salas{border:1px solid #e2e8f0;border-radius:16px;padding:15px;margin-top:16px}
+.salas-grid{display:grid;grid-template-columns:repeat({{ numero_salas if numero_salas else 1 }},minmax(0,1fr));gap:12px}
+.sala-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:13px}
+.sala-titulo{font-weight:900;color:#0f172a;margin-bottom:12px}
+.linha-atribuicao{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:start;margin-bottom:8px}
+.linha-atribuicao select,.linha-atribuicao input{margin:0;width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;box-sizing:border-box}
+.btn-mini{padding:8px 10px;border-radius:9px;border:0;cursor:pointer;font-weight:800}
+.btn-add{background:#dbeafe;color:#1d4ed8}
+.btn-rem{background:#fee2e2;color:#991b1b}
+.obs{margin-top:10px}
+.obs textarea{width:100%;min-height:75px;padding:9px;border:1px solid #cbd5e1;border-radius:9px;box-sizing:border-box;resize:vertical}
+.nota{color:#64748b;font-size:.85rem;line-height:1.5}
+@media(max-width:900px){
+    .salas-grid{grid-template-columns:1fr!important}
+}
+@media(min-width:901px) and (max-width:1150px){
+    .salas-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:650px){
+    .linha-atribuicao{grid-template-columns:1fr}
+}
+</style>
+
+<div class="wrap-salas">
+
+    <div class="head-salas" style="margin-bottom:18px;">
+        <div>
+            <h2 style="margin:0;color:#0f172a;">Atribuição de Salas</h2>
+            <p style="margin:5px 0 0;color:#64748b;">
+                Planeie de uma só vez a ocupação das salas de segunda a sexta-feira.
+            </p>
+        </div>
+
+        <a class="btn-sala btn-neutral" href="{{ url_for('turma.turmas') }}">
+            Voltar a Turmas
+        </a>
+    </div>
+
+    {% if erro %}
+    <div class="erro-salas">{{ erro }}</div>
+    {% endif %}
+
+    <form method="POST" id="form-salas">
+
+        <div class="card-salas">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;">
+                <div style="max-width:650px;">
+                    <h3 style="margin:0 0 6px;color:#0f172a;">Configuração</h3>
+                    <p class="nota">
+                        Escolha quantas salas existem no Centro. O número de colunas do planeamento
+                        será criado automaticamente.
+                    </p>
+                </div>
+
+                <div style="width:180px;">
+                    <label style="display:block;font-weight:800;font-size:.8rem;color:#475569;margin-bottom:6px;">
+                        Número de salas
+                    </label>
+                    <input
+                        type="number"
+                        name="numero_salas"
+                        min="1"
+                        max="20"
+                        required
+                        value="{{ numero_salas if numero_salas else 2 }}"
+                        style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;box-sizing:border-box;"
+                    >
+                </div>
+            </div>
+        </div>
+
+        {% for dia in dias %}
+
+        <div class="card-salas dia-salas">
+            <div style="font-size:1.1rem;font-weight:900;color:#0f172a;margin-bottom:12px;">
+                {{ dia.titulo }}
+            </div>
+
+            <div class="salas-grid">
+
+                {% for sala in dia.salas %}
+
+                <div class="sala-card"
+                     data-dia="{{ dia.chave }}"
+                     data-sala="{{ sala.numero }}">
+
+                    <div class="sala-titulo">
+                        Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
+                    </div>
+
+                    <div class="linhas"
+                         id="linhas-{{ dia.chave }}-{{ sala.numero }}">
+
+                        {% if sala.atribuicoes %}
+
+                            {% for item in sala.atribuicoes %}
+                            <div class="linha-atribuicao">
+                                <select name="turma__{{ dia.chave }}__{{ sala.numero }}__{{ loop.index0 }}"
+                                        onchange="limparTexto(this)">
+                                    <option value="">Turma existente...</option>
+                                    {% for t in turmas %}
+                                    <option value="{{ t.id }}"
+                                        {% if item.turma_id == t.id %}selected{% endif %}>
+                                        {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
+                                <input type="text"
+                                       name="texto__{{ dia.chave }}__{{ sala.numero }}__{{ loop.index0 }}"
+                                       value="{{ item.texto_livre }}"
+                                       placeholder="Ou texto livre..."
+                                       oninput="limparTurma(this)">
+
+                                <button type="button"
+                                        class="btn-mini btn-rem"
+                                        onclick="removerLinha(this)">
+                                    Remover
+                                </button>
+                            </div>
+                            {% endfor %}
+
+                        {% else %}
+
+                            <div class="linha-atribuicao">
+                                <select name="turma__{{ dia.chave }}__{{ sala.numero }}__0"
+                                        onchange="limparTexto(this)">
+                                    <option value="">Turma existente...</option>
+                                    {% for t in turmas %}
+                                    <option value="{{ t.id }}">
+                                        {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
+                                <input type="text"
+                                       name="texto__{{ dia.chave }}__{{ sala.numero }}__0"
+                                       placeholder="Ou texto livre..."
+                                       oninput="limparTurma(this)">
+
+                                <button type="button"
+                                        class="btn-mini btn-rem"
+                                        onclick="removerLinha(this)">
+                                    Remover
+                                </button>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <button type="button"
+                            class="btn-mini btn-add"
+                            style="margin-top:4px;"
+                            onclick="adicionarLinha('{{ dia.chave }}', {{ sala.numero }})">
+                        + Adicionar atribuição
+                    </button>
+
+                    <div class="obs">
+                        <label style="display:block;font-size:.75rem;font-weight:800;color:#64748b;margin-bottom:5px;">
+                            Observações
+                        </label>
+                        <textarea name="observacoes__{{ dia.chave }}__{{ sala.numero }}"
+                                  placeholder="Observações desta sala neste dia...">{{ sala.observacoes or '' }}</textarea>
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+        </div>
+
+        {% endfor %}
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px;">
+            <a class="btn-sala btn-neutral" href="{{ url_for('turma.turmas') }}">
+                Cancelar
+            </a>
+
+            <button type="submit" class="btn-sala btn-primary">
+                Guardar Atribuição de Salas
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+const turmasOptions = `
+    <option value="">Turma existente...</option>
+    {% for t in turmas %}
+    <option value="{{ t.id }}">{{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}</option>
+    {% endfor %}
+`;
+
+function limparTexto(select) {
+    const linha = select.closest('.linha-atribuicao');
+    const texto = linha.querySelector('input[type="text"]');
+    if (select.value) {
+        texto.value = '';
+    }
+}
+
+function limparTurma(input) {
+    const linha = input.closest('.linha-atribuicao');
+    const select = linha.querySelector('select');
+    if (input.value.trim()) {
+        select.value = '';
+    }
+}
+
+function removerLinha(botao) {
+    const linha = botao.closest('.linha-atribuicao');
+    const container = linha.parentElement;
+
+    if (container.querySelectorAll('.linha-atribuicao').length === 1) {
+        const select = linha.querySelector('select');
+        const input = linha.querySelector('input[type="text"]');
+        select.value = '';
+        input.value = '';
+        return;
+    }
+
+    linha.remove();
+}
+
+function adicionarLinha(dia, sala) {
+    const container = document.getElementById(`linhas-${dia}-${sala}`);
+    const indice = container.querySelectorAll('.linha-atribuicao').length;
+
+    const linha = document.createElement('div');
+    linha.className = 'linha-atribuicao';
+
+    linha.innerHTML = `
+        <select name="turma__${dia}__${sala}__${indice}"
+                onchange="limparTexto(this)">
+            ${turmasOptions}
+        </select>
+
+        <input type="text"
+               name="texto__${dia}__${sala}__${indice}"
+               placeholder="Ou texto livre..."
+               oninput="limparTurma(this)">
+
+        <button type="button"
+                class="btn-mini btn-rem"
+                onclick="removerLinha(this)">
+            Remover
+        </button>
+    `;
+
+    container.appendChild(linha);
+}
+</script>
+
+{% endblock %}

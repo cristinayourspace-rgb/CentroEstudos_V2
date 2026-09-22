@@ -1,6 +1,7 @@
 import json
 import re
 import unicodedata
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -16,9 +17,22 @@ from models import db
 from models.aluno import Aluno
 from models.turma import Turma
 from models.horario_turma import HorarioTurma, DIAS_SEMANA
+from models.atribuicao_sala import (
+    ConfiguracaoSalas,
+    PlaneamentoSala,
+    AtribuicaoSala,
+)
 
 
 turma_bp = Blueprint("turma", __name__)
+
+DIAS_ATRIBUICAO_SALAS = [
+    ("segunda", "Segunda-feira"),
+    ("terca", "Terça-feira"),
+    ("quarta", "Quarta-feira"),
+    ("quinta", "Quinta-feira"),
+    ("sexta", "Sexta-feira"),
+]
 
 
 DISCIPLINAS_POR_ANO = {
@@ -88,6 +102,286 @@ def _ordenar_turmas(turmas):
     return sorted(turmas, key=lambda t: (chave_texto(t.escola), chave_turma(t.nome)))
 
 
+def _chave_dia_atual():
+    indice = datetime.now().weekday()
+    if indice > 4:
+        return None
+    return DIAS_ATRIBUICAO_SALAS[indice][0]
+
+
+def _montar_sala(planeamento, turmas_por_id):
+    atribuicoes = []
+
+    if planeamento:
+        linhas = AtribuicaoSala.query.filter_by(
+            planeamento_id=planeamento.id
+        ).order_by(
+            AtribuicaoSala.ordem.asc(),
+            AtribuicaoSala.id.asc()
+        ).all()
+
+        for linha in linhas:
+            nome = ""
+            if linha.turma_id and linha.turma_id in turmas_por_id:
+                turma = turmas_por_id[linha.turma_id]
+                nome = turma.nome
+            elif linha.texto_livre:
+                nome = linha.texto_livre
+
+            if nome:
+                atribuicoes.append({
+                    "id": linha.id,
+                    "nome": nome,
+                    "turma_id": linha.turma_id,
+                    "texto_livre": linha.texto_livre or "",
+                })
+
+    return {
+        "numero": planeamento.sala_numero if planeamento else None,
+        "observacoes": planeamento.observacoes if planeamento else "",
+        "atribuicoes": atribuicoes,
+    }
+
+
+def obter_atribuicao_salas_dia(dia=None):
+    config = ConfiguracaoSalas.query.first()
+
+    if not config or config.numero_salas < 1:
+        return None
+
+    if dia is None:
+        dia = _chave_dia_atual()
+
+    if dia is None:
+        return {
+            "dia": "fim_de_semana",
+            "titulo": "Fim de semana",
+            "salas": [],
+            "numero_salas": config.numero_salas,
+        }
+
+    titulo = dict(DIAS_ATRIBUICAO_SALAS).get(dia, dia)
+    planeamentos = {
+        p.sala_numero: p
+        for p in PlaneamentoSala.query.filter_by(dia_semana=dia).all()
+    }
+
+    turmas_por_id = {
+        t.id: t
+        for t in Turma.query.all()
+    }
+
+    salas = []
+    for numero in range(1, config.numero_salas + 1):
+        sala = _montar_sala(
+            planeamentos.get(numero),
+            turmas_por_id,
+        )
+        sala["numero"] = numero
+        salas.append(sala)
+
+    return {
+        "dia": dia,
+        "titulo": titulo,
+        "salas": salas,
+        "numero_salas": config.numero_salas,
+    }
+
+
+def obter_atribuicao_salas_semanal():
+    config = ConfiguracaoSalas.query.first()
+
+    if not config or config.numero_salas < 1:
+        return {
+            "configurada": False,
+            "numero_salas": 0,
+            "dias": [],
+        }
+
+    turmas_por_id = {
+        t.id: t
+        for t in Turma.query.all()
+    }
+
+    todos = {}
+    for chave, _titulo in DIAS_ATRIBUICAO_SALAS:
+        todos[chave] = {
+            p.sala_numero: p
+            for p in PlaneamentoSala.query.filter_by(
+                dia_semana=chave
+            ).all()
+        }
+
+    dias = []
+
+    for chave, titulo in DIAS_ATRIBUICAO_SALAS:
+        salas = []
+
+        for numero in range(1, config.numero_salas + 1):
+            planeamento = todos.get(chave, {}).get(numero)
+            sala = _montar_sala(planeamento, turmas_por_id)
+            sala["numero"] = numero
+            salas.append(sala)
+
+        dias.append({
+            "chave": chave,
+            "titulo": titulo,
+            "salas": salas,
+        })
+
+    return {
+        "configurada": True,
+        "numero_salas": config.numero_salas,
+        "dias": dias,
+    }
+
+
+@turma_bp.route("/turmas/atribuicao-salas", methods=["GET", "POST"])
+def atribuicao_salas():
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+
+    turmas = _ordenar_turmas(Turma.query.all())
+
+    if request.method == "POST":
+        try:
+            numero_salas = int(request.form.get("numero_salas", "0"))
+        except ValueError:
+            numero_salas = 0
+
+        if numero_salas < 1 or numero_salas > 20:
+            dados = obter_atribuicao_salas_semanal()
+            return render_template(
+                "atribuicao_salas.html",
+                **dados,
+                turmas=turmas,
+                erro="Indique um número de salas entre 1 e 20.",
+            )
+
+        config = ConfiguracaoSalas.query.first()
+        if not config:
+            config = ConfiguracaoSalas(numero_salas=numero_salas)
+            db.session.add(config)
+        else:
+            config.numero_salas = numero_salas
+
+        antigos = PlaneamentoSala.query.all()
+
+        for planeamento in antigos:
+            AtribuicaoSala.query.filter_by(
+                planeamento_id=planeamento.id
+            ).delete(synchronize_session=False)
+            db.session.delete(planeamento)
+
+        padrao = re.compile(
+            r"^turma__([a-z]+)__(\d+)__(\d+)$"
+        )
+
+        for chave_dia, _titulo in DIAS_ATRIBUICAO_SALAS:
+            for sala_numero in range(1, numero_salas + 1):
+                planeamento = PlaneamentoSala(
+                    dia_semana=chave_dia,
+                    sala_numero=sala_numero,
+                    observacoes=request.form.get(
+                        f"observacoes__{chave_dia}__{sala_numero}",
+                        "",
+                    ).strip() or None,
+                )
+                db.session.add(planeamento)
+                db.session.flush()
+
+                indices = set()
+
+                for chave in request.form.keys():
+                    match = padrao.match(chave)
+                    if not match:
+                        continue
+
+                    dia_lido, sala_lida, indice = match.groups()
+
+                    if dia_lido == chave_dia and int(sala_lida) == sala_numero:
+                        indices.add(int(indice))
+
+                for indice in sorted(indices):
+                    turma_id = request.form.get(
+                        f"turma__{chave_dia}__{sala_numero}__{indice}",
+                        "",
+                    ).strip()
+
+                    texto = request.form.get(
+                        f"texto__{chave_dia}__{sala_numero}__{indice}",
+                        "",
+                    ).strip()
+
+                    if turma_id:
+                        try:
+                            turma_id_int = int(turma_id)
+                        except ValueError:
+                            turma_id_int = None
+
+                        if turma_id_int and Turma.query.get(turma_id_int):
+                            db.session.add(
+                                AtribuicaoSala(
+                                    planeamento_id=planeamento.id,
+                                    turma_id=turma_id_int,
+                                    ordem=indice,
+                                )
+                            )
+                            continue
+
+                    if texto:
+                        db.session.add(
+                            AtribuicaoSala(
+                                planeamento_id=planeamento.id,
+                                texto_livre=texto[:200],
+                                ordem=indice,
+                            )
+                        )
+
+        db.session.commit()
+
+        return redirect(
+            url_for(
+                "turma.turmas",
+                salas_guardadas=1,
+            )
+        )
+
+    dados = obter_atribuicao_salas_semanal()
+
+    return render_template(
+        "atribuicao_salas.html",
+        **dados,
+        turmas=turmas,
+        erro=None,
+    )
+
+
+@turma_bp.route("/turmas/atribuicao-salas/eliminar", methods=["POST"])
+def eliminar_atribuicao_salas():
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+
+    for planeamento in PlaneamentoSala.query.all():
+        AtribuicaoSala.query.filter_by(
+            planeamento_id=planeamento.id
+        ).delete(synchronize_session=False)
+        db.session.delete(planeamento)
+
+    config = ConfiguracaoSalas.query.first()
+    if config:
+        db.session.delete(config)
+
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "turma.turmas",
+            salas_eliminadas=1,
+        )
+    )
+
+
 @turma_bp.route("/turmas")
 def turmas():
     todas = _ordenar_turmas(Turma.query.all())
@@ -111,6 +405,7 @@ def turmas():
         disciplinas_da_turma=disciplinas_da_turma,
         dias_semana=DIAS_SEMANA,
         turmas_com_horario=turmas_com_horario,
+        atribuicao_salas=obter_atribuicao_salas_semanal(),
     )
 
 

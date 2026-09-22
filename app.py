@@ -28,7 +28,7 @@ from models.alerta_utilizador import AlertaUtilizador
 from routes.alunos import alunos_bp
 from routes.frequencias import frequencias_bp
 from routes.notas import notas_bp
-from routes.turma import turma_bp
+from routes.turma import turma_bp, obter_atribuicao_salas_dia
 from routes.testes import testes_bp
 from routes.calendario import calendario_bp
 from routes.admins import admins_bp
@@ -375,6 +375,8 @@ def inicio():
             2
         )
 
+    atribuicao_salas_hoje = obter_atribuicao_salas_dia()
+
     return render_template(
         "dashboard.html",
         total_alunos=total_alunos,
@@ -382,7 +384,8 @@ def inicio():
         alunos_em_estudo=alunos_em_estudo,
         total_frequencias=total_frequencias,
         total_notas=total_notas,
-        media_geral=media_geral
+        media_geral=media_geral,
+        atribuicao_salas_hoje=atribuicao_salas_hoje
     )
 
 

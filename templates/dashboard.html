@@ -72,6 +72,68 @@ Dashboard
 
 <div class="mt-8 bg-white rounded-2xl shadow-md p-5 md:p-6">
 
+    <div class="flex items-center justify-between gap-4 flex-wrap mb-6">
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">
+                Atribuição de Salas
+            </h2>
+            <p class="text-gray-500 text-sm mt-1">
+                {{ atribuicao_salas_hoje.titulo if atribuicao_salas_hoje else 'Hoje' }}
+            </p>
+        </div>
+
+        <a href="{{ url_for('turma.atribuicao_salas') }}"
+           class="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-sm">
+            Gerir atribuição
+        </a>
+    </div>
+
+    {% if atribuicao_salas_hoje and atribuicao_salas_hoje.dia != 'fim_de_semana' %}
+
+    <div style="display:grid;grid-template-columns:repeat({{ atribuicao_salas_hoje.numero_salas }},minmax(0,1fr));gap:14px;">
+        {% for sala in atribuicao_salas_hoje.salas %}
+        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <h3 class="font-bold text-gray-800 mb-3">
+                Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
+            </h3>
+
+            {% for item in sala.atribuicoes %}
+            <div class="text-sm text-gray-700 py-1">
+                • {{ item.nome }}
+            </div>
+            {% else %}
+            <div class="text-sm text-gray-400">
+                Sem atribuição
+            </div>
+            {% endfor %}
+
+            {% if sala.observacoes %}
+            <div class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+                <strong>Obs.:</strong> {{ sala.observacoes }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% elif atribuicao_salas_hoje and atribuicao_salas_hoje.dia == 'fim_de_semana' %}
+
+    <div class="rounded-2xl bg-gray-50 p-5 text-gray-500 text-sm">
+        Não existe atribui????o de salas para o fim de semana.
+    </div>
+
+    {% else %}
+
+    <div class="rounded-2xl bg-gray-50 p-5 text-gray-500 text-sm">
+        Ainda não existe uma atribui????o de salas.
+    </div>
+
+    {% endif %}
+
+</div>
+
+<div class="mt-8 bg-white rounded-2xl shadow-md p-5 md:p-6">
+
     <h2 class="text-xl font-bold text-gray-800 mb-6">
         Resumo do Sistema
     </h2>

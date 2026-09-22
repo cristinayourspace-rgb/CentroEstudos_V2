@@ -157,6 +157,87 @@
         </div>
     </div>
 
+    <div class="card" style="margin-bottom:22px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+            <div>
+                <h3 style="margin:0 0 5px 0;font-size:1.25rem;color:#0f172a;">
+                    Atribuição de Salas
+                </h3>
+                <p style="margin:0;color:#64748b;font-size:.9rem;">
+                    Planeamento semanal de segunda a sexta-feira.
+                </p>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a class="btn primary" href="{{ url_for('turma.atribuicao_salas') }}">
+                    {% if atribuicao_salas.configurada %}
+                        Editar Atribuição
+                    {% else %}
+                        Configurar Salas
+                    {% endif %}
+                </a>
+
+                {% if atribuicao_salas.configurada %}
+                <form method="POST"
+                      action="{{ url_for('turma.eliminar_atribuicao_salas') }}"
+                      onsubmit="return confirm('Eliminar toda a atribui????o semanal de salas?')">
+                    <button type="submit"
+                            class="btn"
+                            style="background:#fee2e2;color:#991b1b;border:0;">
+                        Eliminar
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if atribuicao_salas.configurada %}
+
+        <div style="display:grid;gap:16px;">
+            {% for dia in atribuicao_salas.dias %}
+            <div style="border:1px solid #e2e8f0;border-radius:14px;padding:14px;">
+                <div style="font-weight:800;color:#0f172a;margin-bottom:12px;">
+                    {{ dia.titulo }}
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat({{ atribuicao_salas.numero_salas }},minmax(0,1fr));gap:10px;">
+                    {% for sala in dia.salas %}
+                    <div style="background:#f8fafc;border-radius:12px;padding:12px;min-height:90px;">
+                        <div style="font-weight:800;color:#334155;margin-bottom:7px;">
+                            Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
+                        </div>
+
+                        {% for item in sala.atribuicoes %}
+                            <div style="font-size:.9rem;color:#1e293b;margin:3px 0;">
+                                • {{ item.nome }}
+                            </div>
+                        {% else %}
+                            <div style="font-size:.82rem;color:#94a3b8;">
+                                Sem atribuição
+                            </div>
+                        {% endfor %}
+
+                        {% if sala.observacoes %}
+                        <div style="margin-top:8px;padding-top:7px;border-top:1px solid #e2e8f0;color:#64748b;font-size:.8rem;">
+                            <strong>Obs.:</strong> {{ sala.observacoes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+
+        <div style="padding:20px;text-align:center;color:#64748b;background:#f8fafc;border-radius:12px;">
+            Ainda não existe uma atribui????o de salas.
+        </div>
+
+        {% endif %}
+    </div>
+
     <div class="card">
 
         {% set escola_atual = namespace(nome=None) %}
