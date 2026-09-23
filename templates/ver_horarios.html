@@ -1,0 +1,252 @@
+﻿{% extends "base.html" %}
+
+{% block titulo %}Ver Hor&aacute;rios{% endblock %}
+
+{% block conteudo %}
+
+<style>
+.ver-horarios-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.ver-horarios-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.ver-horarios-acoes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ver-horarios-btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.ver-horarios-escola {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.ver-horarios-escola-titulo {
+    background: #f1f5f9;
+    border-left: 4px solid #2563eb;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.ver-horarios-turma {
+    border-top: 1px solid #e2e8f0;
+    padding: 16px 0 4px;
+}
+
+.ver-horarios-turma:first-child {
+    border-top: 0;
+}
+
+.ver-horarios-turma-titulo {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.ver-horarios-tabela-wrap {
+    overflow-x: auto;
+}
+
+.ver-horarios-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+.ver-horarios-tabela th {
+    text-align: left;
+    background: #f8fafc;
+    color: #475569;
+    font-size: .82rem;
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ver-horarios-tabela td {
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    font-size: .9rem;
+    vertical-align: top;
+}
+
+.ver-horarios-tabela tr:last-child td {
+    border-bottom: 0;
+}
+
+.ver-horarios-disciplinas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ver-horarios-disciplina {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 7px;
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 600;
+}
+
+.ver-horarios-vazio {
+    padding: 30px;
+    text-align: center;
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+}
+
+@media (max-width: 700px) {
+    .ver-horarios-cabecalho {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+
+<div class="ver-horarios-wrap">
+
+    <div class="ver-horarios-cabecalho">
+
+        <div>
+            <h2 style="margin:0;">Ver Hor&aacute;rios</h2>
+
+            <p style="margin:5px 0 0;color:#64748b;">
+                Consulta dos hor&aacute;rios j&aacute; definidos para cada turma.
+            </p>
+        </div>
+
+        <div class="ver-horarios-acoes">
+            <a class="ver-horarios-btn"
+               href="{{ url_for('turma.turmas') }}">
+                &larr; Voltar &agrave;s Turmas
+            </a>
+        </div>
+
+    </div>
+
+    {% if escolas %}
+
+        {% for escola in escolas %}
+
+        <div class="ver-horarios-escola">
+
+            <div class="ver-horarios-escola-titulo">
+                {{ escola.nome }}
+            </div>
+
+            {% for turma in escola.turmas %}
+
+            <div class="ver-horarios-turma">
+
+                <div class="ver-horarios-turma-titulo">
+                    Turma {{ turma.nome }}
+                </div>
+
+                {% if turma.periodos %}
+
+                <div class="ver-horarios-tabela-wrap">
+
+                    <table class="ver-horarios-tabela">
+
+                        <thead>
+                            <tr>
+                                <th>Dia</th>
+                                <th>Hor&aacute;rio</th>
+                                <th>Disciplina</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for periodo in turma.periodos %}
+
+                            <tr>
+
+                                <td>{{ periodo.dia }}</td>
+
+                                <td>
+                                    {{ periodo.inicio }} &agrave;s {{ periodo.fim }}
+                                </td>
+
+                                <td>
+
+                                    <div class="ver-horarios-disciplinas">
+
+                                        {% for disciplina in periodo.disciplinas %}
+
+                                        <span class="ver-horarios-disciplina">
+                                            {{ disciplina }}
+                                        </span>
+
+                                        {% endfor %}
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {% else %}
+
+                <div class="ver-horarios-vazio">
+                    N&atilde;o existem hor&aacute;rios definidos para esta turma.
+                </div>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="ver-horarios-vazio">
+            Ainda n&atilde;o existem hor&aacute;rios definidos.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
