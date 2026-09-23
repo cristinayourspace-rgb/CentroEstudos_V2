@@ -236,6 +236,97 @@ def obter_atribuicao_salas_semanal():
     }
 
 
+@turma_bp.route("/turmas/ver-horarios")
+def ver_horarios_consulta():
+    """Consulta os horÃ¡rios existentes, sem criar nem alterar dados."""
+
+    horarios = HorarioTurma.query.all()
+
+    # Segunda a sexta, pela ordem correta.
+    ordem_dias = {
+        "Segunda-feira": 0,
+        "TerÃ§a-feira": 1,
+        "Quarta-feira": 2,
+        "Quinta-feira": 3,
+        "Sexta-feira": 4,
+    }
+
+    def chave_texto_local(valor):
+        return (valor or "").strip().casefold()
+
+    def chave_turma_local(valor):
+        import re
+
+        texto_turma = (valor or "").strip().upper()
+        partes = re.match(r"^(\d+)\s*([A-Za-zÀ-ÿ].*)?$", texto_turma)
+
+        if partes:
+            numero = int(partes.group(1))
+            letra = (partes.group(2) or "").strip()
+            return (0, numero, letra.casefold())
+
+        return (1, texto_turma.casefold())
+
+    # Agrupa: escola -> turma -> dia -> perÃ­odo.
+    escolas = {}
+
+    for horario in horarios:
+        escola = (horario.centro_escolar or "Sem escola").strip()
+        turma = (horario.turma or "Sem turma").strip()
+        dia = (horario.dia_semana or "").strip()
+        inicio = (horario.hora_inicio or "").strip()
+        fim = (horario.hora_fim or "").strip()
+        disciplina = (horario.disciplina or "").strip()
+
+        if dia not in ordem_dias:
+            continue
+
+        escolas.setdefault(escola, {})
+        escolas[escola].setdefault(turma, {})
+        escolas[escola][turma].setdefault((dia, inicio, fim), [])
+
+        if disciplina and disciplina not in escolas[escola][turma][(dia, inicio, fim)]:
+            escolas[escola][turma][(dia, inicio, fim)].append(disciplina)
+
+    resultado = []
+
+    for escola_nome in sorted(escolas, key=chave_texto_local):
+        turmas = []
+
+        for turma_nome in sorted(escolas[escola_nome], key=chave_turma_local):
+            periodos = []
+
+            for (dia, inicio, fim), disciplinas in escolas[escola_nome][turma_nome].items():
+                periodos.append({
+                    "dia": dia,
+                    "inicio": inicio,
+                    "fim": fim,
+                    "disciplinas": sorted(disciplinas, key=chave_texto_local),
+                })
+
+            periodos.sort(
+                key=lambda p: (
+                    ordem_dias.get(p["dia"], 99),
+                    p["inicio"],
+                    p["fim"],
+                )
+            )
+
+            turmas.append({
+                "nome": turma_nome,
+                "periodos": periodos,
+            })
+
+        resultado.append({
+            "nome": escola_nome,
+            "turmas": turmas,
+        })
+
+    return render_template(
+        "ver_horarios.html",
+        escolas=resultado,
+    )
+
 @turma_bp.route("/turmas/atribuicao-salas", methods=["GET", "POST"])
 def atribuicao_salas():
     if session.get("perfil") == "colaborador":
