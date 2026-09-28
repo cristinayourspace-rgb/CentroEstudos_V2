@@ -56,14 +56,6 @@ MESES_PT = {
 )
 def calendario():
 
-    if (
-        session.get("perfil") == "colaborador"
-        and request.method == "POST"
-    ):
-        return render_template(
-            "acesso_negado.html"
-        )
-
     if request.method == "POST":
 
         registo_tipo = request.form.get(
@@ -326,12 +318,6 @@ def detalhe_dia(data):
     methods=["GET", "POST"]
 )
 def editar_evento(id):
-
-    if session.get("perfil") == "colaborador":
-
-        return render_template(
-            "acesso_negado.html"
-        )
 
     evento = Evento.query.get_or_404(id)
 

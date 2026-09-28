@@ -34,12 +34,6 @@ def testes():
 )
 def editar_teste(id):
 
-    if session.get("perfil") == "colaborador":
-
-        return render_template(
-            "acesso_negado.html"
-        )
-
     teste = Teste.query.get_or_404(id)
 
     if request.method == "POST":
