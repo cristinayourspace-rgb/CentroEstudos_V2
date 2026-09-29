@@ -25,6 +25,14 @@
 .obs{margin-top:10px}
 .obs textarea{width:100%;min-height:75px;padding:9px;border:1px solid #cbd5e1;border-radius:9px;box-sizing:border-box;resize:vertical}
 .nota{color:#64748b;font-size:.85rem;line-height:1.5}
+.blocos-config{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip-bloco{display:flex;align-items:center;gap:8px;background:#eef2ff;color:#3730a3;border-radius:999px;padding:7px 8px 7px 14px;font-weight:800;font-size:.85rem}
+.chip-bloco button{background:#c7d2fe;color:#3730a3;border:0;border-radius:999px;width:22px;height:22px;cursor:pointer;font-weight:900;line-height:1}
+.form-add-bloco{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.form-add-bloco input[type="time"]{padding:8px;border:1px solid #cbd5e1;border-radius:8px}
+.sem-blocos{background:#fffbeb;color:#92400e;border-radius:12px;padding:14px;font-weight:600}
+.bloco-secao{border:1px dashed #cbd5e1;border-radius:12px;padding:10px;margin-bottom:10px}
+.bloco-secao-titulo{font-weight:800;color:#1d4ed8;font-size:.85rem;margin-bottom:8px}
 @media(max-width:900px){
     .salas-grid{grid-template-columns:1fr!important}
 }
@@ -42,7 +50,7 @@
         <div>
             <h2 style="margin:0;color:#0f172a;">Atribuição de Salas</h2>
             <p style="margin:5px 0 0;color:#64748b;">
-                Planeie de uma só vez a ocupação das salas de segunda a sexta-feira.
+                Defina os blocos de horário de cada dia e organize as turmas por sala dentro de cada bloco.
             </p>
         </div>
 
@@ -55,18 +63,20 @@
     <div class="erro-salas">{{ erro }}</div>
     {% endif %}
 
-    <form method="POST" id="form-salas">
+    <div class="card-salas">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;">
+            <div style="max-width:650px;">
+                <h3 style="margin:0 0 6px;color:#0f172a;">Configuração</h3>
+                <p class="nota">
+                    Escolha quantas salas existem no Centro. O número de colunas do planeamento
+                    será criado automaticamente.
+                </p>
+            </div>
+        </div>
 
-        <div class="card-salas">
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;">
-                <div style="max-width:650px;">
-                    <h3 style="margin:0 0 6px;color:#0f172a;">Configuração</h3>
-                    <p class="nota">
-                        Escolha quantas salas existem no Centro. O número de colunas do planeamento
-                        será criado automaticamente.
-                    </p>
-                </div>
+        <form method="POST" id="form-salas" style="margin-top:14px;">
 
+            <div style="display:flex;align-items:flex-end;gap:15px;flex-wrap:wrap;">
                 <div style="width:180px;">
                     <label style="display:block;font-weight:800;font-size:.8rem;color:#475569;margin-bottom:6px;">
                         Número de salas
@@ -82,125 +92,187 @@
                     >
                 </div>
             </div>
-        </div>
 
-        {% for dia in dias %}
+            {% for dia in dias %}
 
-        <div class="card-salas dia-salas">
-            <div style="font-size:1.1rem;font-weight:900;color:#0f172a;margin-bottom:12px;">
-                {{ dia.titulo }}
-            </div>
+            <div class="card-salas dia-salas" id="dia-{{ dia.chave }}" style="margin-top:16px;">
+                <div style="font-size:1.1rem;font-weight:900;color:#0f172a;margin-bottom:12px;">
+                    {{ dia.titulo }}
+                </div>
 
-            <div class="salas-grid">
+                <div class="blocos-config">
+                    {% for bloco in dia.blocos %}
+                    <span class="chip-bloco">
+                        {{ bloco.hora_inicio }} – {{ bloco.hora_fim }}
+                        <button type="submit"
+                                form="remover-bloco-{{ bloco.id }}"
+                                title="Remover este bloco">
+                            ×
+                        </button>
+                    </span>
+                    {% endfor %}
+                </div>
 
-                {% for sala in dia.salas %}
+                {% if not dia.blocos %}
+                <div class="sem-blocos">
+                    Ainda não há blocos de horário definidos para este dia.
+                    Adicione um bloco abaixo para começar a organizar as salas.
+                </div>
+                {% endif %}
 
-                <div class="sala-card"
-                     data-dia="{{ dia.chave }}"
-                     data-sala="{{ sala.numero }}">
+                <div class="salas-grid">
 
-                    <div class="sala-titulo">
-                        Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
-                    </div>
+                    {% for sala in dia.salas %}
 
-                    <div class="linhas"
-                         id="linhas-{{ dia.chave }}-{{ sala.numero }}">
+                    <div class="sala-card">
 
-                        {% if sala.atribuicoes %}
+                        <div class="sala-titulo">
+                            Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
+                        </div>
 
-                            {% for item in sala.atribuicoes %}
-                            <div class="linha-atribuicao">
-                                <select name="turma__{{ dia.chave }}__{{ sala.numero }}__{{ loop.index0 }}"
-                                        onchange="limparTexto(this)">
-                                    <option value="">Turma existente...</option>
-                                    {% for t in turmas %}
-                                    <option value="{{ t.id }}"
-                                        {% if item.turma_id == t.id %}selected{% endif %}>
-                                        {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-
-                                <input type="text"
-                                       name="texto__{{ dia.chave }}__{{ sala.numero }}__{{ loop.index0 }}"
-                                       value="{{ item.texto_livre }}"
-                                       placeholder="Ou texto livre..."
-                                       oninput="limparTurma(this)">
-
-                                <button type="button"
-                                        class="btn-mini btn-rem"
-                                        onclick="removerLinha(this)">
-                                    Remover
-                                </button>
-                            </div>
-                            {% endfor %}
-
-                        {% else %}
-
-                            <div class="linha-atribuicao">
-                                <select name="turma__{{ dia.chave }}__{{ sala.numero }}__0"
-                                        onchange="limparTexto(this)">
-                                    <option value="">Turma existente...</option>
-                                    {% for t in turmas %}
-                                    <option value="{{ t.id }}">
-                                        {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-
-                                <input type="text"
-                                       name="texto__{{ dia.chave }}__{{ sala.numero }}__0"
-                                       placeholder="Ou texto livre..."
-                                       oninput="limparTurma(this)">
-
-                                <button type="button"
-                                        class="btn-mini btn-rem"
-                                        onclick="removerLinha(this)">
-                                    Remover
-                                </button>
+                        {% for bloco in sala.blocos %}
+                        <div class="bloco-secao">
+                            <div class="bloco-secao-titulo">
+                                {{ bloco.hora_inicio }} – {{ bloco.hora_fim }}
                             </div>
 
+                            <div class="linhas"
+                                 id="linhas-{{ dia.chave }}-{{ sala.numero }}-{{ bloco.id }}">
+
+                                {% if bloco.atribuicoes %}
+
+                                    {% for item in bloco.atribuicoes %}
+                                    <div class="linha-atribuicao">
+                                        <select name="turma__{{ dia.chave }}__{{ sala.numero }}__{{ bloco.id }}__{{ loop.index0 }}"
+                                                onchange="limparTexto(this)">
+                                            <option value="">Turma existente...</option>
+                                            {% for t in turmas %}
+                                            <option value="{{ t.id }}"
+                                                {% if item.turma_id == t.id %}selected{% endif %}>
+                                                {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <input type="text"
+                                               name="texto__{{ dia.chave }}__{{ sala.numero }}__{{ bloco.id }}__{{ loop.index0 }}"
+                                               value="{{ item.texto_livre }}"
+                                               placeholder="Ou texto livre..."
+                                               oninput="limparTurma(this)">
+
+                                        <button type="button"
+                                                class="btn-mini btn-rem"
+                                                onclick="removerLinha(this)">
+                                            Remover
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+
+                                {% else %}
+
+                                    <div class="linha-atribuicao">
+                                        <select name="turma__{{ dia.chave }}__{{ sala.numero }}__{{ bloco.id }}__0"
+                                                onchange="limparTexto(this)">
+                                            <option value="">Turma existente...</option>
+                                            {% for t in turmas %}
+                                            <option value="{{ t.id }}">
+                                                {{ t.nome }}{% if t.escola %} — {{ t.escola }}{% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <input type="text"
+                                               name="texto__{{ dia.chave }}__{{ sala.numero }}__{{ bloco.id }}__0"
+                                               placeholder="Ou texto livre..."
+                                               oninput="limparTurma(this)">
+
+                                        <button type="button"
+                                                class="btn-mini btn-rem"
+                                                onclick="removerLinha(this)">
+                                            Remover
+                                        </button>
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                            <button type="button"
+                                    class="btn-mini btn-add"
+                                    style="margin-top:4px;"
+                                    onclick="adicionarLinha('{{ dia.chave }}', {{ sala.numero }}, {{ bloco.id }})">
+                                + Adicionar atribuição
+                            </button>
+                        </div>
+                        {% endfor %}
+
+                        {% if dia.blocos %}
+                        <div class="obs">
+                            <label style="display:block;font-size:.75rem;font-weight:800;color:#64748b;margin-bottom:5px;">
+                                Observações
+                            </label>
+                            <textarea name="observacoes__{{ dia.chave }}__{{ sala.numero }}"
+                                      placeholder="Observações desta sala neste dia...">{{ sala.observacoes or '' }}</textarea>
+                        </div>
                         {% endif %}
 
                     </div>
 
-                    <button type="button"
-                            class="btn-mini btn-add"
-                            style="margin-top:4px;"
-                            onclick="adicionarLinha('{{ dia.chave }}', {{ sala.numero }})">
-                        + Adicionar atribuição
-                    </button>
-
-                    <div class="obs">
-                        <label style="display:block;font-size:.75rem;font-weight:800;color:#64748b;margin-bottom:5px;">
-                            Observações
-                        </label>
-                        <textarea name="observacoes__{{ dia.chave }}__{{ sala.numero }}"
-                                  placeholder="Observações desta sala neste dia...">{{ sala.observacoes or '' }}</textarea>
-                    </div>
+                    {% endfor %}
 
                 </div>
 
-                {% endfor %}
+                <div class="form-add-bloco" style="margin-top:14px;">
+                    <input type="time" id="inicio-{{ dia.chave }}" placeholder="Início">
+                    <span>até</span>
+                    <input type="time" id="fim-{{ dia.chave }}" placeholder="Fim">
+                    <button type="submit"
+                            form="add-bloco-{{ dia.chave }}"
+                            class="btn-mini btn-add"
+                            onclick="return prepararBloco('{{ dia.chave }}')">
+                        + Adicionar bloco de horário
+                    </button>
+                </div>
 
             </div>
-        </div>
 
-        {% endfor %}
+            {% endfor %}
 
-        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px;">
-            <a class="btn-sala btn-neutral" href="{{ url_for('turma.turmas') }}">
-                Cancelar
-            </a>
+            <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px;">
+                <a class="btn-sala btn-neutral" href="{{ url_for('turma.turmas') }}">
+                    Cancelar
+                </a>
 
-            <button type="submit" class="btn-sala btn-primary">
-                Guardar Atribuição de Salas
-            </button>
-        </div>
+                <button type="submit" class="btn-sala btn-primary">
+                    Guardar Atribuição de Salas
+                </button>
+            </div>
 
-    </form>
+        </form>
+
+    </div>
 
 </div>
+
+<!-- Formulários independentes para gerir blocos de horário (fora do form principal) -->
+{% for dia in dias %}
+<form id="add-bloco-{{ dia.chave }}"
+      method="POST"
+      action="{{ url_for('turma.adicionar_bloco_atribuicao') }}"
+      style="display:none;">
+    <input type="hidden" name="dia_semana" value="{{ dia.chave }}">
+    <input type="hidden" name="hora_inicio" id="hidden-inicio-{{ dia.chave }}">
+    <input type="hidden" name="hora_fim" id="hidden-fim-{{ dia.chave }}">
+</form>
+
+{% for bloco in dia.blocos %}
+<form id="remover-bloco-{{ bloco.id }}"
+      method="POST"
+      action="{{ url_for('turma.remover_bloco_atribuicao', id=bloco.id) }}"
+      style="display:none;">
+</form>
+{% endfor %}
+{% endfor %}
 
 <script>
 const turmasOptions = `
@@ -241,21 +313,21 @@ function removerLinha(botao) {
     linha.remove();
 }
 
-function adicionarLinha(dia, sala) {
-    const container = document.getElementById(`linhas-${dia}-${sala}`);
+function adicionarLinha(dia, sala, blocoId) {
+    const container = document.getElementById(`linhas-${dia}-${sala}-${blocoId}`);
     const indice = container.querySelectorAll('.linha-atribuicao').length;
 
     const linha = document.createElement('div');
     linha.className = 'linha-atribuicao';
 
     linha.innerHTML = `
-        <select name="turma__${dia}__${sala}__${indice}"
+        <select name="turma__${dia}__${sala}__${blocoId}__${indice}"
                 onchange="limparTexto(this)">
             ${turmasOptions}
         </select>
 
         <input type="text"
-               name="texto__${dia}__${sala}__${indice}"
+               name="texto__${dia}__${sala}__${blocoId}__${indice}"
                placeholder="Ou texto livre..."
                oninput="limparTurma(this)">
 
@@ -267,6 +339,20 @@ function adicionarLinha(dia, sala) {
     `;
 
     container.appendChild(linha);
+}
+
+function prepararBloco(dia) {
+    const inicio = document.getElementById(`inicio-${dia}`).value;
+    const fim = document.getElementById(`fim-${dia}`).value;
+
+    if (!inicio || !fim) {
+        alert('Indique a hora de início e a hora de fim do bloco.');
+        return false;
+    }
+
+    document.getElementById(`hidden-inicio-${dia}`).value = inicio;
+    document.getElementById(`hidden-fim-${dia}`).value = fim;
+    return true;
 }
 </script>
 

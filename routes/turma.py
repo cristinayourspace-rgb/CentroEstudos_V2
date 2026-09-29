@@ -21,6 +21,7 @@ from models.atribuicao_sala import (
     ConfiguracaoSalas,
     PlaneamentoSala,
     AtribuicaoSala,
+    BlocoHorarioAtribuicao,
 )
 
 
@@ -109,8 +110,18 @@ def _chave_dia_atual():
     return DIAS_ATRIBUICAO_SALAS[indice][0]
 
 
-def _montar_sala(planeamento, turmas_por_id):
-    atribuicoes = []
+def _blocos_do_dia(dia):
+    return BlocoHorarioAtribuicao.query.filter_by(
+        dia_semana=dia
+    ).order_by(
+        BlocoHorarioAtribuicao.ordem.asc(),
+        BlocoHorarioAtribuicao.hora_inicio.asc(),
+    ).all()
+
+
+def _montar_sala(planeamento, turmas_por_id, blocos):
+    linhas_por_bloco = {}
+    todas_atribuicoes = []
 
     if planeamento:
         linhas = AtribuicaoSala.query.filter_by(
@@ -129,17 +140,30 @@ def _montar_sala(planeamento, turmas_por_id):
                 nome = linha.texto_livre
 
             if nome:
-                atribuicoes.append({
+                item = {
                     "id": linha.id,
                     "nome": nome,
                     "turma_id": linha.turma_id,
                     "texto_livre": linha.texto_livre or "",
-                })
+                }
+                linhas_por_bloco.setdefault(linha.bloco_id, []).append(item)
+                todas_atribuicoes.append(item)
+
+    blocos_sala = []
+
+    for bloco in blocos:
+        blocos_sala.append({
+            "id": bloco.id,
+            "hora_inicio": bloco.hora_inicio,
+            "hora_fim": bloco.hora_fim,
+            "atribuicoes": linhas_por_bloco.get(bloco.id, []),
+        })
 
     return {
         "numero": planeamento.sala_numero if planeamento else None,
         "observacoes": planeamento.observacoes if planeamento else "",
-        "atribuicoes": atribuicoes,
+        "blocos": blocos_sala,
+        "atribuicoes": todas_atribuicoes,
     }
 
 
@@ -158,9 +182,12 @@ def obter_atribuicao_salas_dia(dia=None):
             "titulo": "Fim de semana",
             "salas": [],
             "numero_salas": config.numero_salas,
+            "blocos": [],
         }
 
     titulo = dict(DIAS_ATRIBUICAO_SALAS).get(dia, dia)
+    blocos = _blocos_do_dia(dia)
+
     planeamentos = {
         p.sala_numero: p
         for p in PlaneamentoSala.query.filter_by(dia_semana=dia).all()
@@ -176,6 +203,7 @@ def obter_atribuicao_salas_dia(dia=None):
         sala = _montar_sala(
             planeamentos.get(numero),
             turmas_por_id,
+            blocos,
         )
         sala["numero"] = numero
         salas.append(sala)
@@ -185,6 +213,14 @@ def obter_atribuicao_salas_dia(dia=None):
         "titulo": titulo,
         "salas": salas,
         "numero_salas": config.numero_salas,
+        "blocos": [
+            {
+                "id": b.id,
+                "hora_inicio": b.hora_inicio,
+                "hora_fim": b.hora_fim,
+            }
+            for b in blocos
+        ],
     }
 
 
@@ -204,6 +240,8 @@ def obter_atribuicao_salas_semanal():
     }
 
     todos = {}
+    blocos_por_dia = {}
+
     for chave, _titulo in DIAS_ATRIBUICAO_SALAS:
         todos[chave] = {
             p.sala_numero: p
@@ -211,15 +249,17 @@ def obter_atribuicao_salas_semanal():
                 dia_semana=chave
             ).all()
         }
+        blocos_por_dia[chave] = _blocos_do_dia(chave)
 
     dias = []
 
     for chave, titulo in DIAS_ATRIBUICAO_SALAS:
         salas = []
+        blocos = blocos_por_dia[chave]
 
         for numero in range(1, config.numero_salas + 1):
             planeamento = todos.get(chave, {}).get(numero)
-            sala = _montar_sala(planeamento, turmas_por_id)
+            sala = _montar_sala(planeamento, turmas_por_id, blocos)
             sala["numero"] = numero
             salas.append(sala)
 
@@ -227,6 +267,14 @@ def obter_atribuicao_salas_semanal():
             "chave": chave,
             "titulo": titulo,
             "salas": salas,
+            "blocos": [
+                {
+                    "id": b.id,
+                    "hora_inicio": b.hora_inicio,
+                    "hora_fim": b.hora_fim,
+                }
+                for b in blocos
+            ],
         })
 
     return {
@@ -365,10 +413,13 @@ def atribuicao_salas():
             db.session.delete(planeamento)
 
         padrao = re.compile(
-            r"^turma__([a-z]+)__(\d+)__(\d+)$"
+            r"^turma__([a-z]+)__(\d+)__(\d+)__(\d+)$"
         )
 
         for chave_dia, _titulo in DIAS_ATRIBUICAO_SALAS:
+            blocos_dia = _blocos_do_dia(chave_dia)
+            blocos_ids_validos = {bloco.id for bloco in blocos_dia}
+
             for sala_numero in range(1, numero_salas + 1):
                 planeamento = PlaneamentoSala(
                     dia_semana=chave_dia,
@@ -381,26 +432,30 @@ def atribuicao_salas():
                 db.session.add(planeamento)
                 db.session.flush()
 
-                indices = set()
+                combinacoes = set()
 
                 for chave in request.form.keys():
                     match = padrao.match(chave)
                     if not match:
                         continue
 
-                    dia_lido, sala_lida, indice = match.groups()
+                    dia_lido, sala_lida, bloco_lido, indice = match.groups()
 
-                    if dia_lido == chave_dia and int(sala_lida) == sala_numero:
-                        indices.add(int(indice))
+                    if (
+                        dia_lido == chave_dia
+                        and int(sala_lida) == sala_numero
+                        and int(bloco_lido) in blocos_ids_validos
+                    ):
+                        combinacoes.add((int(bloco_lido), int(indice)))
 
-                for indice in sorted(indices):
+                for bloco_id, indice in sorted(combinacoes):
                     turma_id = request.form.get(
-                        f"turma__{chave_dia}__{sala_numero}__{indice}",
+                        f"turma__{chave_dia}__{sala_numero}__{bloco_id}__{indice}",
                         "",
                     ).strip()
 
                     texto = request.form.get(
-                        f"texto__{chave_dia}__{sala_numero}__{indice}",
+                        f"texto__{chave_dia}__{sala_numero}__{bloco_id}__{indice}",
                         "",
                     ).strip()
 
@@ -414,6 +469,7 @@ def atribuicao_salas():
                             db.session.add(
                                 AtribuicaoSala(
                                     planeamento_id=planeamento.id,
+                                    bloco_id=bloco_id,
                                     turma_id=turma_id_int,
                                     ordem=indice,
                                 )
@@ -424,6 +480,7 @@ def atribuicao_salas():
                         db.session.add(
                             AtribuicaoSala(
                                 planeamento_id=planeamento.id,
+                                bloco_id=bloco_id,
                                 texto_livre=texto[:200],
                                 ordem=indice,
                             )
@@ -459,6 +516,9 @@ def eliminar_atribuicao_salas():
         ).delete(synchronize_session=False)
         db.session.delete(planeamento)
 
+    for bloco in BlocoHorarioAtribuicao.query.all():
+        db.session.delete(bloco)
+
     config = ConfiguracaoSalas.query.first()
     if config:
         db.session.delete(config)
@@ -470,6 +530,67 @@ def eliminar_atribuicao_salas():
             "turma.turmas",
             salas_eliminadas=1,
         )
+    )
+
+
+@turma_bp.route("/turmas/atribuicao-salas/blocos/adicionar", methods=["POST"])
+def adicionar_bloco_atribuicao():
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+
+    dia = request.form.get("dia_semana", "")
+    hora_inicio = request.form.get("hora_inicio", "").strip()
+    hora_fim = request.form.get("hora_fim", "").strip()
+
+    dias_validos = dict(DIAS_ATRIBUICAO_SALAS)
+
+    if dia in dias_validos and hora_inicio and hora_fim:
+
+        ultimo = BlocoHorarioAtribuicao.query.filter_by(
+            dia_semana=dia
+        ).order_by(
+            BlocoHorarioAtribuicao.ordem.desc()
+        ).first()
+
+        proxima_ordem = (ultimo.ordem + 1) if ultimo else 0
+
+        db.session.add(
+            BlocoHorarioAtribuicao(
+                dia_semana=dia,
+                hora_inicio=hora_inicio,
+                hora_fim=hora_fim,
+                ordem=proxima_ordem,
+            )
+        )
+        db.session.commit()
+    else:
+        flash("Indique a hora de início e a hora de fim do bloco.")
+
+    return redirect(
+        url_for("turma.atribuicao_salas") + f"#dia-{dia}"
+    )
+
+
+@turma_bp.route(
+    "/turmas/atribuicao-salas/blocos/remover/<int:id>",
+    methods=["POST"],
+)
+def remover_bloco_atribuicao(id):
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+
+    bloco = BlocoHorarioAtribuicao.query.get_or_404(id)
+    dia = bloco.dia_semana
+
+    AtribuicaoSala.query.filter_by(
+        bloco_id=bloco.id
+    ).delete(synchronize_session=False)
+
+    db.session.delete(bloco)
+    db.session.commit()
+
+    return redirect(
+        url_for("turma.atribuicao_salas") + f"#dia-{dia}"
     )
 
 

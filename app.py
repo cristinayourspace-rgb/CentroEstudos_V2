@@ -207,6 +207,26 @@ with app.app_context():
                     text("ALTER TABLE frequencias ADD COLUMN tipo_saida VARCHAR(30)")
                 )
 
+            # ----------------------------------------------------------
+            # MIGRAÇÃO: blocos de horário na atribuição de salas
+            # ----------------------------------------------------------
+            colunas_atribuicoes = [
+                coluna["name"]
+                for coluna in inspetor.get_columns("atribuicoes_salas")
+            ]
+
+            if "bloco_id" not in colunas_atribuicoes:
+                conexao.execute(
+                    text("ALTER TABLE atribuicoes_salas ADD COLUMN bloco_id INTEGER")
+                )
+
+                # Primeira vez que a estrutura de blocos é introduzida:
+                # os planeamentos e atribuições antigos (sem blocos) são
+                # limpos, começando do zero. O número de salas
+                # configurado (configuracoes_salas) é mantido.
+                conexao.execute(text("DELETE FROM atribuicoes_salas"))
+                conexao.execute(text("DELETE FROM planeamentos_salas"))
+
             # Reaproveita disciplinas já existentes nos horários para
             # preencher a nova seleção de disciplinas das turmas sem
             # perder dados históricos.

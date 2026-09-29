@@ -1,4 +1,4 @@
-﻿from . import db
+from . import db
 
 
 class ConfiguracaoSalas(db.Model):
@@ -25,6 +25,16 @@ class PlaneamentoSala(db.Model):
     )
 
 
+class BlocoHorarioAtribuicao(db.Model):
+    __tablename__ = "blocos_horario_atribuicao_salas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    dia_semana = db.Column(db.String(20), nullable=False)
+    hora_inicio = db.Column(db.String(5), nullable=False)
+    hora_fim = db.Column(db.String(5), nullable=False)
+    ordem = db.Column(db.Integer, nullable=False, default=0)
+
+
 class AtribuicaoSala(db.Model):
     __tablename__ = "atribuicoes_salas"
 
@@ -34,10 +44,23 @@ class AtribuicaoSala(db.Model):
         db.ForeignKey("planeamentos_salas.id"),
         nullable=False,
     )
+    bloco_id = db.Column(
+        db.Integer,
+        db.ForeignKey("blocos_horario_atribuicao_salas.id"),
+        nullable=True,
+    )
     turma_id = db.Column(
         db.Integer,
         db.ForeignKey("turmas.id"),
         nullable=True,
     )
     texto_livre = db.Column(db.String(200))
+    ordem = db.Column(db.Integer, nullable=False, default=0)
+
+class BlocoHorarioSala(db.Model):
+    __tablename__ = "blocos_horarios_salas"
+    id = db.Column(db.Integer, primary_key=True)
+    dia_semana = db.Column(db.String(20), nullable=False)
+    hora_inicio = db.Column(db.String(5), nullable=False)
+    hora_fim = db.Column(db.String(5), nullable=False)
     ordem = db.Column(db.Integer, nullable=False, default=0)
