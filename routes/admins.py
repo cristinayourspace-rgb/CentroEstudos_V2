@@ -5,10 +5,12 @@ from flask import (
     redirect,
     session,
     flash,
+    current_app,
 )
 
 from models import db
 from models.utilizador import Utilizador
+from models.alerta_utilizador import AlertaUtilizador
 
 
 admins_bp = Blueprint(
@@ -133,7 +135,22 @@ def apagar_admin(id):
         if total <= 1:
             return redirect("/admins")
 
-    db.session.delete(admin)
-    db.session.commit()
+    try:
+        # Remove primeiro os alertas ligados ao utilizador (chave estrangeira).
+        AlertaUtilizador.query.filter_by(
+            utilizador_id=admin.id
+        ).delete(synchronize_session=False)
+
+        db.session.delete(admin)
+        db.session.commit()
+
+        flash("Utilizador eliminado com sucesso.")
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Erro ao eliminar utilizador %s", id)
+        flash(
+            "Não foi possível eliminar este utilizador, porque tem registos associados."
+        )
 
     return redirect("/admins")
