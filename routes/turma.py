@@ -286,18 +286,27 @@ def obter_atribuicao_salas_semanal():
 
 @turma_bp.route("/turmas/ver-horarios")
 def ver_horarios_consulta():
-    """Consulta os horÃ¡rios existentes, sem criar nem alterar dados."""
+    """Consulta os horários existentes, sem criar nem alterar dados."""
 
     horarios = HorarioTurma.query.all()
 
     # Segunda a sexta, pela ordem correta.
-    ordem_dias = {
-        "Segunda-feira": 0,
-        "TerÃ§a-feira": 1,
-        "Quarta-feira": 2,
-        "Quinta-feira": 3,
-        "Sexta-feira": 4,
-    }
+    import unicodedata
+
+    def _sem_acentos(valor):
+        decomposto = unicodedata.normalize("NFD", valor or "")
+        return "".join(
+            c for c in decomposto if unicodedata.category(c) != "Mn"
+        ).strip().casefold()
+
+    _ordem_base = {"segunda": 0, "terca": 1, "quarta": 2, "quinta": 3, "sexta": 4}
+
+    # Aceita o dia tal como esta guardado na base de dados, com ou sem acentos.
+    ordem_dias = {}
+    for _dia_bd in {(h.dia_semana or "").strip() for h in horarios}:
+        _chave = _sem_acentos(_dia_bd).split("-")[0].strip()
+        if _chave in _ordem_base:
+            ordem_dias[_dia_bd] = _ordem_base[_chave]
 
     def chave_texto_local(valor):
         return (valor or "").strip().casefold()
@@ -315,7 +324,7 @@ def ver_horarios_consulta():
 
         return (1, texto_turma.casefold())
 
-    # Agrupa: escola -> turma -> dia -> perÃ­odo.
+    # Agrupa: escola -> turma -> dia -> período.
     escolas = {}
 
     for horario in horarios:
