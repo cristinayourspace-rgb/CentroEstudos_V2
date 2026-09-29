@@ -97,9 +97,21 @@ Dashboard
                 Sala {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[sala.numero - 1] }}
             </h3>
 
-            {% for item in sala.atribuicoes %}
-            <div class="text-sm text-gray-700 py-1">
-                • {{ item.nome }}
+            {% for bloco in sala.blocos %}
+            <div style="margin-bottom:10px;">
+                <div style="display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:.75rem;font-weight:700;border-radius:6px;padding:2px 8px;margin-bottom:4px;">
+                    {{ bloco.hora_inicio }} – {{ bloco.hora_fim }}
+                </div>
+
+                {% for item in bloco.atribuicoes %}
+                <div class="text-sm text-gray-700 py-1">
+                    • {{ item.nome }}
+                </div>
+                {% else %}
+                <div class="text-sm text-gray-400">
+                    Sem atribuição
+                </div>
+                {% endfor %}
             </div>
             {% else %}
             <div class="text-sm text-gray-400">
