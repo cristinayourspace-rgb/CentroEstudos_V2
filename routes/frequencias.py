@@ -51,6 +51,56 @@ def horas_para_hhmm(horas):
     return f"{horas_int:02d}:{minutos:02d}"
 
 
+def formatar_horas_centesimas(horas):
+    """1.3333 -> '1,33' (arredonda as centesimas, virgula decimal)."""
+    valor = round(float(horas or 0), 2)
+    return f"{valor:.2f}".replace(".", ",")
+
+
+def minutos_da_frequencia(frequencia):
+    """
+    Minutos contabilizados numa frequencia.
+
+    duracao_horas guarda o valor ja arredondado a 2 casas; multiplicar
+    por 60 e arredondar recupera os minutos exatos (sem acumular erro).
+    Registos anulados ou presencas valem 0.
+    """
+    if esta_anulada(frequencia) or eh_presenca(frequencia):
+        return 0
+
+    return int(round((frequencia.duracao_horas or 0) * 60))
+
+
+def minutos_realizados_semana(aluno, hoje=None):
+    """Soma os minutos de estudo de segunda a domingo da semana atual."""
+    hoje = hoje or agora_portugal().date()
+    inicio = hoje - timedelta(days=hoje.weekday())
+    fim = inicio + timedelta(days=6)
+
+    total = 0
+
+    for frequencia in aluno.frequencias:
+        try:
+            data_freq = datetime.strptime(
+                str(frequencia.data or "").strip(),
+                "%d/%m/%Y"
+            ).date()
+        except ValueError:
+            continue
+
+        if inicio <= data_freq <= fim:
+            total += minutos_da_frequencia(frequencia)
+
+    return total
+
+
+def minutos_restantes_semana(aluno, hoje=None):
+    """Pacote semanal menos o estudo ja feito esta semana (minimo 0)."""
+    pacote_minutos = int(round((aluno.pacote_horas or 0) * 60))
+    restantes = pacote_minutos - minutos_realizados_semana(aluno, hoje)
+    return max(0, restantes)
+
+
 def eh_presenca(frequencia):
     return (
         frequencia.tipo_registo == TIPO_PRESENCA
@@ -256,9 +306,16 @@ def obter_resumo_diario():
 
 def preparar_historico_frequencias(historico):
     for item in historico:
+        minutos_restantes = minutos_restantes_semana(item.aluno)
+        horas_restantes = minutos_restantes / 60
+
         item.horas_restantes_formatadas = horas_para_hhmm(
-            item.aluno.horas_restantes
+            horas_restantes
         )
+        item.horas_restantes_centesimas = formatar_horas_centesimas(
+            horas_restantes
+        )
+        item.horas_restantes_semana = round(horas_restantes, 2)
 
         item.duracao_formatada = horas_para_hhmm(
             item.duracao_horas or 0
@@ -754,7 +811,10 @@ def finalizar_frequencia(frequencia_id):
             "finalizar_frequencia.html",
             frequencia=frequencia,
             aluno=aluno,
-            tipo_saida=tipo_saida
+            tipo_saida=tipo_saida,
+            horas_restantes_semana=formatar_horas_centesimas(
+                minutos_restantes_semana(aluno) / 60
+            )
         )
 
     # GET também apresenta a página de finalização.
@@ -763,7 +823,10 @@ def finalizar_frequencia(frequencia_id):
             "finalizar_frequencia.html",
             frequencia=frequencia,
             aluno=aluno,
-            tipo_saida=tipo_saida
+            tipo_saida=tipo_saida,
+            horas_restantes_semana=formatar_horas_centesimas(
+                minutos_restantes_semana(aluno) / 60
+            )
         )
 
     # Segunda etapa:
@@ -908,7 +971,7 @@ def finalizar_frequencia(frequencia_id):
         aluno=aluno,
         whatsapp_link=whatsapp_link,
         saida_solicitada=False,
-        duracao=duracao
+        duracao=formatar_horas_centesimas(duracao)
     )
 @frequencias_bp.route(
     "/frequencias/anular/<int:frequencia_id>",

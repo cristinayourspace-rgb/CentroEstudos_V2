@@ -397,6 +397,10 @@
             <div>
                 <div class="aluno-fluxo-nome">
                     {{ item.aluno.nome }}
+                    <span style="font-size:13px;font-weight:600;margin-left:8px;
+                                 color:{{ '#b91c1c' if item.horas_restantes_semana <= 0 else '#047857' }};">
+                        ({{ item.horas_restantes_centesimas }} h restantes)
+                    </span>
                 </div>
 
                 <div class="aluno-fluxo-info">
