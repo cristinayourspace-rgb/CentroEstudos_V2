@@ -4,13 +4,18 @@ from flask import (
     request,
     redirect,
     url_for,
-    session
+    session,
+    flash
 )
 
 from models import db
 from models.aluno import Aluno
 from models.evento import Evento
 from models.teste import Teste
+from routes.testes import (
+    procurar_teste_duplicado,
+    mensagem_teste_duplicado
+)
 
 import calendar
 from datetime import datetime
@@ -64,6 +69,36 @@ def calendario():
         )
 
         if registo_tipo == "teste":
+
+            duplicado = procurar_teste_duplicado(
+                request.form["data_teste"],
+                request.form["escola"],
+                request.form["turma"]
+            )
+
+            if duplicado:
+
+                flash(
+                    mensagem_teste_duplicado(duplicado)
+                    + " O novo teste não foi registado.",
+                    "aviso"
+                )
+
+                try:
+                    mes_dup = int(duplicado.data_teste[5:7])
+                    ano_dup = int(duplicado.data_teste[0:4])
+                except ValueError:
+                    return redirect(
+                        url_for("calendario.calendario")
+                    )
+
+                return redirect(
+                    url_for(
+                        "calendario.calendario",
+                        mes=mes_dup,
+                        ano=ano_dup
+                    )
+                )
 
             teste = Teste(
                 escola=request.form["escola"].strip(),

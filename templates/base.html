@@ -404,6 +404,21 @@
 
         <main class="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-8 pb-8">
 
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% if mensagens %}
+            <div style="margin-bottom:16px;">
+                {% for categoria, mensagem in mensagens %}
+                <div role="alert"
+                     style="padding:14px 18px;border-radius:12px;margin-bottom:8px;font-weight:600;
+                            {% if categoria in ['aviso', 'erro'] %}background:#fff7ed;border:1px solid #fdba74;color:#9a3412;{% else %}background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;{% endif %}">
+                    {% if categoria in ['aviso', 'erro'] %}⚠️{% else %}ℹ️{% endif %}
+                    {{ mensagem }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
             {% block conteudo %}
             {% endblock %}
 
