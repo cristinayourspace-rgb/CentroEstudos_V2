@@ -1159,10 +1159,12 @@ def corrigir_frequencia(frequencia_id):
             (aluno.horas_restantes or 0) + diferenca
         )
 
-    frequencia.hora_entrada = nova_entrada
-
     if frequencia.hora_inicio_estudo:
+        # Chegada ja registada: corrige apenas o inicio do estudo
+        # e preserva a hora de chegada.
         frequencia.hora_inicio_estudo = nova_entrada
+    else:
+        frequencia.hora_entrada = nova_entrada
 
     frequencia.hora_saida = nova_saida
     frequencia.duracao_horas = nova_duracao
@@ -1177,6 +1179,89 @@ def corrigir_frequencia(frequencia_id):
     return redirect(
         url_for("frequencias.frequencias")
     )
+
+
+@frequencias_bp.route(
+    "/frequencias/corrigir-inicio/<int:frequencia_id>",
+    methods=["POST"]
+)
+def corrigir_inicio_estudo(frequencia_id):
+    """Corrige a hora de inicio de um estudo ainda em curso."""
+    if not utilizador_pode_alterar_registos():
+        return render_template(
+            "acesso_negado.html"
+        )
+
+    destino = url_for("frequencias.frequencias")
+
+    frequencia = Frequencia.query.get_or_404(
+        frequencia_id
+    )
+
+    if not eh_sessao_estudo_aberta(frequencia):
+        flash(
+            "Só é possível corrigir o início de um "
+            "estudo que ainda está em curso."
+        )
+        return redirect(destino)
+
+    agora = agora_portugal()
+
+    if frequencia.data != agora.strftime("%d/%m/%Y"):
+        flash(
+            "Só é possível corrigir sessões de hoje."
+        )
+        return redirect(destino)
+
+    novo_inicio = request.form.get(
+        "hora_inicio",
+        ""
+    ).strip()
+
+    try:
+        hora = datetime.strptime(
+            novo_inicio,
+            "%H:%M"
+        )
+    except ValueError:
+        flash(
+            "Indique uma hora válida no formato HH:MM."
+        )
+        return redirect(destino)
+
+    if (hora.hour, hora.minute) > (agora.hour, agora.minute):
+        flash(
+            "O início do estudo não pode ser no futuro."
+        )
+        return redirect(destino)
+
+    # Se houve chegada separada, o estudo nao pode comecar
+    # antes da chegada.
+    if (
+        frequencia.hora_inicio_estudo
+        and frequencia.hora_entrada
+        and frequencia.hora_inicio_estudo != frequencia.hora_entrada
+        and novo_inicio < frequencia.hora_entrada
+    ):
+        flash(
+            "O estudo não pode começar antes da chegada "
+            f"({frequencia.hora_entrada})."
+        )
+        return redirect(destino)
+
+    if frequencia.hora_inicio_estudo:
+        frequencia.hora_inicio_estudo = novo_inicio
+    else:
+        frequencia.hora_entrada = novo_inicio
+
+    db.session.commit()
+
+    flash(
+        f"Início do estudo de {frequencia.aluno.nome} "
+        f"corrigido para {novo_inicio}."
+    )
+
+    return redirect(destino)
 
 
 @frequencias_bp.route(

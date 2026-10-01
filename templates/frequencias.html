@@ -49,6 +49,26 @@
     color:#166534;
 }
 
+.aluno-estudo-card.alerta-2h {
+    border:2px solid #f97316;
+    background:#ffedd5;
+}
+
+.aluno-estudo-card.alerta-2h .aluno-fluxo-nome {
+    color:#9a3412;
+}
+
+.selo-2h {
+    display:none;
+    margin-left:8px;
+    padding:2px 10px;
+    border-radius:999px;
+    background:#f97316;
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+}
+
 .aluno-espera-card .aluno-fluxo-nome {
     color:#9a3412;
 }
@@ -392,7 +412,8 @@
     {% for item in historico %}
         {% if item.eh_sessao_estudo_aberta %}
 
-        <div class="aluno-fluxo-card aluno-estudo-card">
+        <div class="aluno-fluxo-card aluno-estudo-card"
+             data-inicio="{{ item.hora_inicio_estudo or item.hora_entrada or '' }}">
 
             <div>
                 <div class="aluno-fluxo-nome">
@@ -406,14 +427,31 @@
                 <div class="aluno-fluxo-info">
                     Código: {{ item.aluno.codigo }}
                     · Início do estudo: {{ item.hora_inicio_estudo or item.hora_entrada or "—" }}
+                    <span class="selo-2h"></span>
                 </div>
             </div>
 
-            <button type="button"
-                    class="btn-saida"
-                    onclick="abrirModalSaida('{{ item.id }}', '{{ item.aluno.nome|e }}')">
-                🔴 Saída
-            </button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+
+                {% if session.get('perfil') in ['administrador', 'administrador_geral'] %}
+                <button type="button"
+                        class="btn-acao btn-corrigir"
+                        onclick="abrirCorrecaoInicio(
+                            '{{ item.id }}',
+                            '{{ item.aluno.nome|e }}',
+                            '{{ item.hora_inicio_estudo or item.hora_entrada or '' }}'
+                        )">
+                    ✏️ Corrigir início
+                </button>
+                {% endif %}
+
+                <button type="button"
+                        class="btn-saida"
+                        onclick="abrirModalSaida('{{ item.id }}', '{{ item.aluno.nome|e }}')">
+                    🔴 Saída
+                </button>
+
+            </div>
 
         </div>
 
@@ -423,6 +461,48 @@
 </div>
 {% endif %}
 
+
+<script>
+(function () {
+    var LIMITE_MINUTOS = 120;
+
+    function minutosDesde(hhmm) {
+        var p = String(hhmm || "").split(":");
+        if (p.length < 2) { return null; }
+        var h = parseInt(p[0], 10);
+        var m = parseInt(p[1], 10);
+        if (isNaN(h) || isNaN(m)) { return null; }
+        var inicio = new Date();
+        inicio.setHours(h, m, 0, 0);
+        return Math.floor((new Date() - inicio) / 60000);
+    }
+
+    function atualizarAlertas() {
+        var cartoes = document.querySelectorAll(".aluno-estudo-card[data-inicio]");
+        cartoes.forEach(function (cartao) {
+            var minutos = minutosDesde(cartao.getAttribute("data-inicio"));
+            var selo = cartao.querySelector(".selo-2h");
+            if (minutos === null) { return; }
+
+            if (minutos >= LIMITE_MINUTOS) {
+                cartao.classList.add("alerta-2h");
+                if (selo) {
+                    var h = Math.floor(minutos / 60);
+                    var mm = String(minutos % 60).padStart(2, "0");
+                    selo.textContent = "⏰ 2 h completas · " + h + "h" + mm;
+                    selo.style.display = "inline-block";
+                }
+            } else {
+                cartao.classList.remove("alerta-2h");
+                if (selo) { selo.style.display = "none"; }
+            }
+        });
+    }
+
+    atualizarAlertas();
+    setInterval(atualizarAlertas, 30000);
+})();
+</script>
 
 <!-- ALUNOS EM ESPERA -->
 {% if em_espera > 0 %}
@@ -759,7 +839,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             onclick="abrirCorrecao(
                                 '{{ item.id }}',
                                 '{{ item.aluno.nome|e }}',
-                                '{{ item.hora_entrada }}',
+                                '{{ item.hora_inicio_estudo or item.hora_entrada }}',
                                 '{{ item.hora_saida }}'
                             )">
                             ✏️ Corrigir
@@ -935,6 +1015,70 @@ document.addEventListener("DOMContentLoaded", function () {
 
 </div>
 
+<!-- MODAL: CORRIGIR INICIO DO ESTUDO EM CURSO -->
+<div id="modalInicio" class="modal-correcao-overlay">
+
+    <div class="modal-correcao">
+
+        <h3 style="margin-top:0;">
+            Corrigir início do estudo
+        </h3>
+
+        <p id="nomeAlunoInicio" style="color:#6b7280;"></p>
+
+        <form id="formInicio" method="POST">
+
+            <label for="horaInicioCorrecao">
+                Hora de início do estudo
+            </label>
+
+            <input id="horaInicioCorrecao"
+                   name="hora_inicio"
+                   type="time"
+                   required>
+
+            <div class="modal-botoes">
+
+                <button type="button"
+                        class="btn-fechar"
+                        onclick="fecharCorrecaoInicio()">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="btn-confirmar">
+                    Guardar início
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+function abrirCorrecaoInicio(id, nome, inicio) {
+    document.getElementById("nomeAlunoInicio").textContent =
+        "Aluno: " + nome;
+    document.getElementById("horaInicioCorrecao").value = inicio;
+    document.getElementById("formInicio").action =
+        "/frequencias/corrigir-inicio/" + id;
+    document.getElementById("modalInicio").style.display = "flex";
+}
+
+function fecharCorrecaoInicio() {
+    document.getElementById("modalInicio").style.display = "none";
+}
+
+window.addEventListener("click", function (event) {
+    if (event.target === document.getElementById("modalInicio")) {
+        fecharCorrecaoInicio();
+    }
+});
+</script>
+
 <!-- MODAL DE CORREÇÃO -->
 <div id="modalCorrecao" class="modal-correcao-overlay">
 
@@ -949,7 +1093,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <form id="formCorrecao" method="POST">
 
             <label for="horaEntradaCorrecao">
-                Hora de entrada
+                Hora de início do estudo
             </label>
 
             <input id="horaEntradaCorrecao"
