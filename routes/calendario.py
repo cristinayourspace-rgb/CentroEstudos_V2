@@ -18,6 +18,8 @@ from routes.testes import (
 )
 
 import calendar
+import unicodedata
+import zlib
 from datetime import datetime
 
 
@@ -53,6 +55,77 @@ MESES_PT = {
     11: "Novembro",
     12: "Dezembro"
 }
+
+
+# Cor fixa por disciplina (a mesma em qualquer ano ou turma).
+# O reconhecimento e feito pelo inicio do nome, sem acentos nem
+# maiusculas: "Matemática A" e "MATEMATICA" -> Matemática.
+# A ordem importa: "historia e geografia" antes de "historia".
+DISCIPLINAS_CORES = [
+    ("matematica", "Matemática", "#2563eb"),
+    ("portugues", "Português", "#db2777"),
+    ("ingles", "Inglês", "#7c3aed"),
+    ("ciencias", "Ciências", "#16a34a"),
+    ("estudo do meio", "Estudo do Meio", "#65a30d"),
+    ("historia e geografia", "HGP", "#a16207"),
+    ("hgp", "HGP", "#a16207"),
+    ("historia", "História", "#9a3412"),
+    ("geografia", "Geografia", "#0d9488"),
+    ("fisico", "Físico-Química", "#0891b2"),
+    ("frances", "Francês", "#c026d3"),
+    ("espanhol", "Espanhol", "#ea580c"),
+]
+
+# Cores para disciplinas fora da lista acima (escolhidas de forma
+# estavel a partir do nome, por isso nunca mudam).
+CORES_EXTRA = [
+    "#0ea5e9",
+    "#84cc16",
+    "#f43f5e",
+    "#14b8a6",
+    "#8b5cf6",
+    "#f59e0b",
+    "#64748b",
+    "#d946ef",
+]
+
+
+def _normalizar_disciplina(valor):
+    texto = unicodedata.normalize("NFKD", str(valor or ""))
+    texto = "".join(
+        c for c in texto if not unicodedata.combining(c)
+    )
+    return " ".join(texto.lower().split())
+
+
+def info_disciplina(disciplina):
+    """Devolve (nome para a legenda, cor) de uma disciplina."""
+    chave = _normalizar_disciplina(disciplina)
+
+    for prefixo, nome, cor in DISCIPLINAS_CORES:
+        if chave.startswith(prefixo):
+            return nome, cor
+
+    if not chave:
+        return "Teste", CORES_TIPO["Teste"]
+
+    indice = zlib.crc32(chave.encode("utf-8")) % len(CORES_EXTRA)
+    return str(disciplina).strip(), CORES_EXTRA[indice]
+
+
+def cor_disciplina(disciplina):
+    return info_disciplina(disciplina)[1]
+
+
+def legenda_disciplinas(testes):
+    """Lista (nome, cor) sem repeticoes, por ordem alfabetica."""
+    vistos = {}
+
+    for teste in testes:
+        nome, cor = info_disciplina(teste.disciplina)
+        vistos[nome] = cor
+
+    return sorted(vistos.items(), key=lambda par: par[0].lower())
 
 
 @calendario_bp.route(
@@ -228,6 +301,7 @@ def calendario():
                             f"Turma {teste.turma}"
                         ),
                         "tipo": "Teste",
+                        "cor": cor_disciplina(teste.disciplina),
                         "data": teste.data_teste
                     }
                 )
@@ -268,7 +342,9 @@ def calendario():
         lista_testes=testes,
         escolas=escolas,
         turmas=turmas,
-        cores_tipo=CORES_TIPO
+        cores_tipo=CORES_TIPO,
+        cor_disciplina=cor_disciplina,
+        legenda_disciplinas=legenda_disciplinas(testes)
     )
 
 
@@ -320,6 +396,7 @@ def detalhe_dia(data):
                 "titulo": f"Teste - {teste.disciplina}",
                 "data": teste.data_teste,
                 "tipo": "Teste",
+                "cor": cor_disciplina(teste.disciplina),
                 "descricao": teste.observacoes,
                 "matriz": teste.matriz,
                 "escola": teste.escola,

@@ -337,7 +337,11 @@ Calendário do Centro
         <span class="legenda-badge" style="background:#ef4444;">Feriado</span>
         <span class="legenda-badge" style="background:#f97316;">Paragem Letiva</span>
         <span class="legenda-badge" style="background:#facc15;color:#1f2937;">Férias</span>
+        {% for nome_disc, cor_disc in legenda_disciplinas %}
+        <span class="legenda-badge" style="background:{{ cor_disc }};">{{ nome_disc }}</span>
+        {% else %}
         <span class="legenda-badge" style="background:#3b82f6;">Teste</span>
+        {% endfor %}
         <span class="legenda-badge" style="background:#22c55e;">Reunião</span>
         <span class="legenda-badge" style="background:#a855f7;">Aviso</span>
         <span class="legenda-badge" style="background:#6b7280;">Outros</span>
@@ -390,7 +394,7 @@ Calendário do Centro
 
                                     <div
                                         class="evento-chip"
-                                        style="background:{{ cores_tipo.get(evento.tipo, '#e5e7eb') }};"
+                                        style="background:{{ evento.cor or cores_tipo.get(evento.tipo, '#e5e7eb') }};"
                                     >
 
                                         <a href="/calendario/dia/{{ evento.data }}">
@@ -604,7 +608,7 @@ Calendário do Centro
                     <td>
                         <span
                             class="badge-tipo"
-                            style="background:{{ cores_tipo.get('Teste') }};"
+                            style="background:{{ cor_disciplina(teste.disciplina) }};"
                         >
                             Teste
                         </span>
@@ -726,7 +730,7 @@ Calendário do Centro
                     <div>
                         <div class="registo-label">Tipo</div>
                         <div class="registo-valor">
-                            <span class="badge-tipo" style="background:{{ cores_tipo.get('Teste') }};">
+                            <span class="badge-tipo" style="background:{{ cor_disciplina(teste.disciplina) }};">
                                 Teste
                             </span>
                         </div>
