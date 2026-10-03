@@ -442,7 +442,9 @@ def ver_aluno(id):
     hoje = date.today().strftime("%Y-%m-%d")
 
     proximos_testes = Teste.query.filter(
-        Teste.data_teste >= hoje
+        Teste.data_teste >= hoje,
+        Teste.escola == aluno.escola,
+        Teste.turma == aluno.turma,
     ).order_by(Teste.data_teste.asc()).all()
 
     # --------------------------------------------------
@@ -692,7 +694,9 @@ def pdf_aluno(id):
     hoje = date.today().strftime("%Y-%m-%d")
 
     proximos_testes = Teste.query.filter(
-        Teste.data_teste >= hoje
+        Teste.data_teste >= hoje,
+        Teste.escola == aluno.escola,
+        Teste.turma == aluno.turma,
     ).order_by(Teste.data_teste.asc()).all()
 
     total_horas = sum(
@@ -746,15 +750,84 @@ def pdf_aluno(id):
         pagina += 1
         y = altura - 50
 
+    margem_direita = largura - 50
+
+    def quebrar_palavra_longa(palavra, fonte, tamanho_fonte, largura_disponivel):
+
+        pedacos = []
+        atual = ""
+
+        for caractere in palavra:
+
+            tentativa = atual + caractere
+
+            if pdf.stringWidth(tentativa, fonte, tamanho_fonte) <= largura_disponivel:
+                atual = tentativa
+            else:
+                if atual:
+                    pedacos.append(atual)
+                atual = caractere
+
+        if atual:
+            pedacos.append(atual)
+
+        return pedacos or [""]
+
+    def quebrar_linha(texto, fonte, tamanho_fonte, largura_disponivel):
+
+        palavras = str(texto).split(" ")
+        linhas = []
+        linha_atual = ""
+
+        for palavra in palavras:
+
+            # Palavra sozinha já maior que a margem (ex: texto colado
+            # sem espaços) — quebra caractere a caractere.
+            if pdf.stringWidth(palavra, fonte, tamanho_fonte) > largura_disponivel:
+
+                if linha_atual:
+                    linhas.append(linha_atual)
+                    linha_atual = ""
+
+                linhas.extend(
+                    quebrar_palavra_longa(
+                        palavra, fonte, tamanho_fonte, largura_disponivel
+                    )
+                )
+                continue
+
+            tentativa = f"{linha_atual} {palavra}".strip()
+
+            if pdf.stringWidth(tentativa, fonte, tamanho_fonte) <= largura_disponivel:
+                linha_atual = tentativa
+            else:
+                if linha_atual:
+                    linhas.append(linha_atual)
+                linha_atual = palavra
+
+        if linha_atual:
+            linhas.append(linha_atual)
+
+        return linhas or [""]
+
     def escrever(texto, espacamento=16):
 
         nonlocal y
 
-        if y < 60:
-            nova_pagina()
+        fonte = pdf._fontname
+        tamanho_fonte = pdf._fontsize
+        largura_disponivel = margem_direita - 50
 
-        pdf.drawString(50, y, str(texto))
-        y -= espacamento
+        linhas = quebrar_linha(texto, fonte, tamanho_fonte, largura_disponivel)
+
+        for linha in linhas:
+
+            if y < 60:
+                nova_pagina()
+                pdf.setFont(fonte, tamanho_fonte)
+
+            pdf.drawString(50, y, linha)
+            y -= espacamento
 
     # ------------------------------------------------------------------
     # CABEÇALHO
