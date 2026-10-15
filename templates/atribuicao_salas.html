@@ -91,6 +91,13 @@
                         style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;box-sizing:border-box;"
                     >
                 </div>
+                <button type="submit"
+                        form="form-limpar-tudo"
+                        class="btn-sala btn-danger"
+                        onclick="return confirm('Apagar TODOS os blocos de horas e atribuicoes de salas guardados? Esta acao nao pode ser desfeita.')"
+                        title="Apaga todos os blocos de horas e atribuicoes guardados">
+                    Limpar todas
+                </button>
             </div>
 
             {% for dia in dias %}
@@ -254,6 +261,7 @@
 
 </div>
 
+<form id="form-limpar-tudo" method="POST" action="{{ url_for('turma.limpar_tudo_atribuicao_salas') }}" style="display:none;"></form>
 <!-- Formulários independentes para gerir blocos de horário (fora do form principal) -->
 {% for dia in dias %}
 <form id="add-bloco-{{ dia.chave }}"

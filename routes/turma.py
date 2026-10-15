@@ -542,6 +542,20 @@ def eliminar_atribuicao_salas():
     )
 
 
+@turma_bp.route("/turmas/atribuicao-salas/limpar-tudo", methods=["POST"])
+def limpar_tudo_atribuicao_salas():
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+
+    # Apaga atribuicoes, observacoes e blocos de horas. Mantem o numero de salas.
+    AtribuicaoSala.query.delete(synchronize_session=False)
+    PlaneamentoSala.query.delete(synchronize_session=False)
+    BlocoHorarioAtribuicao.query.delete(synchronize_session=False)
+    db.session.commit()
+
+    flash("Todos os blocos de horas e atribuicoes de salas foram apagados.")
+    return redirect(url_for("turma.atribuicao_salas"))
+
 @turma_bp.route("/turmas/atribuicao-salas/blocos/adicionar", methods=["POST"])
 def adicionar_bloco_atribuicao():
     if session.get("perfil") == "colaborador":
