@@ -302,12 +302,24 @@ def calendario():
                         ),
                         "tipo": "Teste",
                         "cor": cor_disciplina(teste.disciplina),
+                        "e_teste": True,
+                        "disciplina": info_disciplina(teste.disciplina)[0],
+                        "titulo_curto": f"{teste.escola} - Turma {teste.turma}",
                         "data": teste.data_teste
                     }
                 )
 
         except Exception:
             pass
+
+    # Dentro de cada dia: eventos primeiro; testes agrupados por disciplina
+    def _ordem_dia(item):
+        if isinstance(item, dict) and item.get("e_teste"):
+            return (1, item["disciplina"].lower(), item["titulo_curto"].lower())
+        return (0, "", "")
+
+    for lista_dia in eventos_mes.values():
+        lista_dia.sort(key=_ordem_dia)
 
     alunos = Aluno.query.order_by(
         Aluno.escola,

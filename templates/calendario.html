@@ -155,6 +155,17 @@ Calendário do Centro
     }
     .evento-chip:hover{ opacity:0.85; }
 
+    /* Titulo de disciplina dentro de cada dia */
+    .disc-grupo{
+        margin:6px 0 3px;
+        padding-left:6px;
+        border-left:3px solid;
+        font-size:0.68rem;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:0.03em;
+    }
+
     .evento-chip a{
         color:white;
         text-decoration:none;
@@ -390,18 +401,32 @@ Calendário do Centro
 
                             {% if dia in eventos %}
 
+                                {% set ns = namespace(disc=None) %}
                                 {% for evento in eventos[dia] %}
 
-                                    <div
-                                        class="evento-chip"
-                                        style="background:{{ evento.cor or cores_tipo.get(evento.tipo, '#e5e7eb') }};"
-                                    >
+                                    {% if evento.e_teste %}
 
-                                        <a href="/calendario/dia/{{ evento.data }}">
-                                            {{ evento.titulo }}
-                                        </a>
+                                        {% if evento.disciplina != ns.disc %}
+                                            <div class="disc-grupo" style="border-left-color:{{ evento.cor }}; color:{{ evento.cor }};">{{ evento.disciplina }}</div>
+                                            {% set ns.disc = evento.disciplina %}
+                                        {% endif %}
 
-                                    </div>
+                                        <div class="evento-chip" style="background:{{ evento.cor }};" title="{{ evento.titulo }}">
+                                            <a href="/calendario/dia/{{ evento.data }}">{{ evento.titulo_curto }}</a>
+                                        </div>
+
+                                    {% else %}
+
+                                        <div
+                                            class="evento-chip"
+                                            style="background:{{ evento.cor or cores_tipo.get(evento.tipo, '#e5e7eb') }};"
+                                        >
+                                            <a href="/calendario/dia/{{ evento.data }}">
+                                                {{ evento.titulo }}
+                                            </a>
+                                        </div>
+
+                                    {% endif %}
 
                                 {% endfor %}
 
