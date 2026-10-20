@@ -12,6 +12,7 @@ from models import db
 from models.aluno import Aluno
 from models.evento import Evento
 from models.teste import Teste
+from models.turma import Turma
 from routes.testes import (
     procurar_teste_duplicado,
     mensagem_teste_duplicado
@@ -19,6 +20,7 @@ from routes.testes import (
 
 import calendar
 import unicodedata
+import re
 import zlib
 from datetime import datetime
 
@@ -115,6 +117,46 @@ def info_disciplina(disciplina):
 
 def cor_disciplina(disciplina):
     return info_disciplina(disciplina)[1]
+
+
+def _numero_ano(texto):
+    """'5A' -> 5; '9.º A' -> 9; '8º' -> 8; sem numero -> None."""
+    achado = re.match(r"\s*(\d{1,2})", str(texto or ""))
+    return int(achado.group(1)) if achado else None
+
+
+def ciclo_da_turma(turma, escola=""):
+    """Devolve (nome do ciclo, ordem). 1-4 -> 1.º Ciclo; 5-6 -> 2.º; 7-9 -> 3.º."""
+    numero = _numero_ano(turma)
+
+    if numero is None:
+        # Turmas sem numero no nome (ex.: 'E'): procurar o ano escolar na tabela de turmas
+        chave_turma = _normalizar_disciplina(turma)
+        chave_escola = _normalizar_disciplina(escola)
+        candidatas = [
+            t for t in Turma.query.all()
+            if _normalizar_disciplina(t.nome) == chave_turma
+        ]
+        com_escola = [
+            t for t in candidatas
+            if _normalizar_disciplina(t.escola) == chave_escola
+        ]
+        for t in (com_escola or candidatas):
+            numero = _numero_ano(t.ano_escolar)
+            if numero is not None:
+                break
+
+    if numero is None:
+        return "Sem ciclo", 5
+    if 1 <= numero <= 4:
+        return "1.º Ciclo", 1
+    if 5 <= numero <= 6:
+        return "2.º Ciclo", 2
+    if 7 <= numero <= 9:
+        return "3.º Ciclo", 3
+    if 10 <= numero <= 12:
+        return "Secundário", 4
+    return "Sem ciclo", 5
 
 
 def legenda_disciplinas(testes):
@@ -302,6 +344,8 @@ def calendario():
                         ),
                         "tipo": "Teste",
                         "cor": cor_disciplina(teste.disciplina),
+                        "ciclo": ciclo_da_turma(teste.turma, teste.escola)[0],
+                        "ciclo_ordem": ciclo_da_turma(teste.turma, teste.escola)[1],
                         "e_teste": True,
                         "disciplina": info_disciplina(teste.disciplina)[0],
                         "titulo_curto": f"{teste.escola} - Turma {teste.turma}",
@@ -315,7 +359,7 @@ def calendario():
     # Dentro de cada dia: eventos primeiro; testes agrupados por disciplina
     def _ordem_dia(item):
         if isinstance(item, dict) and item.get("e_teste"):
-            return (1, item["disciplina"].lower(), item["titulo_curto"].lower())
+            return (1, item["ciclo_ordem"], item["disciplina"].lower(), item["titulo_curto"].lower())
         return (0, "", "")
 
     for lista_dia in eventos_mes.values():
