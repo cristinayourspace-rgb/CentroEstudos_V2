@@ -320,6 +320,101 @@ Gestão de Notas
 
 </div>
 
+{# Medias por ciclo e disciplina (medias-ciclos) #}
+{% if medias_ciclos %}
+<div class="card" id="medias-ciclos" style="margin-bottom:20px;">
+    <h3>Evolu&ccedil;&atilde;o das m&eacute;dias por ciclo e disciplina</h3>
+    <p style="color:#718087;font-size:13px;margin-top:0;">Evolu&ccedil;&atilde;o mensal da m&eacute;dia global de cada disciplina (todas as notas de todos os alunos do ciclo). O ciclo vem do ano da turma do aluno.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+        {% for nome, c in medias_ciclos.ciclos.items() %}
+        <div style="border:1px solid #e3e9e7;border-radius:12px;padding:14px;">
+            <strong>{{ nome }}</strong>
+            <div style="color:#718087;font-size:12px;margin-bottom:8px;">{{ c.notas }} nota{{ '' if c.notas == 1 else 's' }}</div>
+            {% if c.disciplinas %}
+            <div style="position:relative;height:240px;"><canvas id="grafico-ciclo-{{ loop.index }}"></canvas></div>
+            {% else %}
+            <p style="color:#718087;">Ainda sem notas registadas neste ciclo.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% if evolucao_ciclos and evolucao_ciclos.sem_data %}
+    <p style="color:#718087;font-size:12px;margin-bottom:0;">{{ evolucao_ciclos.sem_data }} nota(s) sem data de avalia&ccedil;&atilde;o leg&iacute;vel n&atilde;o entram nos gr&aacute;ficos.</p>
+    {% endif %}
+    {% set ded = medias_ciclos.origem_ano.get('deduzido_do_nome', 0) %}
+    {% if ded or medias_ciclos.sem_ciclo.notas %}
+    <p style="color:#718087;font-size:12px;margin-bottom:0;">
+        {% if ded %}{{ ded }} nota(s) de turmas sem ano definido: o ciclo foi deduzido do nome da turma. {% endif %}
+        {% if medias_ciclos.sem_ciclo.notas %}{{ medias_ciclos.sem_ciclo.notas }} nota(s) fora destes ciclos (secund&aacute;rio ou turma sem ano) n&atilde;o entram nos gr&aacute;ficos.{% endif %}
+    </p>
+    {% endif %}
+</div>
+<script>
+(function () {
+    var ciclos = {{ medias_ciclos.ciclos | tojson }};
+    var evolucao = {{ (evolucao_ciclos or {}) | tojson }};
+    var nomes = Object.keys(ciclos);
+    function desenhar() {
+        nomes.forEach(function (nome, i) {
+            var c = ciclos[nome];
+            var canvas = document.getElementById('grafico-ciclo-' + (i + 1));
+            if (!canvas || !c.disciplinas.length) { return; }
+            var ev = (evolucao.ciclos || {})[nome];
+            if (!ev || !ev.series || !ev.series.length) {
+                canvas.parentNode.innerHTML = '<p style="color:#718087;">Sem datas de avalia\u00e7\u00e3o leg\u00edveis para desenhar a evolu\u00e7\u00e3o.</p>';
+                return;
+            }
+            var cores = ['#3b6ea5', '#d9822b', '#3a9d6e', '#b04a6b', '#7a5fb5', '#8a8f3a', '#2f9ab0', '#a85d3a'];
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: ev.rotulos,
+                    datasets: ev.series.map(function (s, k) {
+                        return {
+                            label: s.disciplina,
+                            data: s.medias,
+                            borderColor: cores[k % cores.length],
+                            backgroundColor: cores[k % cores.length],
+                            borderWidth: 2,
+                            tension: 0.25,
+                            spanGaps: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'nearest', intersect: true },
+                    plugins: {
+                        legend: { display: true, position: 'bottom' },
+                        tooltip: { callbacks: { label: function (ctx) {
+                            var s = ev.series[ctx.datasetIndex];
+                            var n = s.contagens[ctx.dataIndex];
+                            return s.disciplina + ': ' + ctx.parsed.y + ' (' + n + (n === 1 ? ' nota' : ' notas') + ')';
+                        } } }
+                    },
+                    scales: { y: { beginAtZero: true, min: 0, max: 100 } }
+                }
+            });
+        });
+    }
+    if (window.Chart) { desenhar(); }
+    else {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        s.onload = desenhar;
+        document.head.appendChild(s);
+    }
+})();
+</script>
+{% else %}
+<div class="card" id="medias-ciclos" style="margin-bottom:20px;">
+    <p style="margin:0;color:#718087;">N&atilde;o foi poss&iacute;vel calcular as m&eacute;dias por ciclo.</p>
+</div>
+{% endif %}
+
 {# ── Listagem de Notas ──────────────────────────────────────────────── #}
 <div class="card">
 

@@ -11,6 +11,43 @@ notas_bp = Blueprint(
 )
 
 
+import logging
+
+from sqlalchemy import text
+
+from ciclos import ANO_TURMA_SQL, evolucao_notas, medias_notas
+
+
+def _medias_ciclos():
+    """Medias por ciclo e disciplina. So leitura. Nunca parte a pagina: devolve None se falhar."""
+    try:
+        linhas = db.session.execute(text(
+            f"SELECT n.aluno_id, n.disciplina, n.nota, a.turma, {ANO_TURMA_SQL} AS ano_turma "
+            "FROM notas n JOIN alunos a ON a.id = n.aluno_id "
+            "WHERE n.nota IS NOT NULL AND a.ativo IS NOT FALSE"
+        )).mappings().all()
+        return medias_notas([dict(l) for l in linhas], "todas")
+    except Exception:
+        db.session.rollback()
+        logging.exception("Nao foi possivel calcular as medias por ciclo")
+        return None
+
+
+def _evolucao_ciclos():
+    """Evolucao mensal das medias globais por ciclo e disciplina. So leitura. Devolve None se falhar."""
+    try:
+        linhas = db.session.execute(text(
+            f"SELECT n.disciplina, n.nota, n.data_avaliacao, a.turma, {ANO_TURMA_SQL} AS ano_turma "
+            "FROM notas n JOIN alunos a ON a.id = n.aluno_id "
+            "WHERE n.nota IS NOT NULL AND a.ativo IS NOT FALSE"
+        )).mappings().all()
+        return evolucao_notas([dict(l) for l in linhas])
+    except Exception:
+        db.session.rollback()
+        logging.exception("Nao foi possivel calcular a evolucao das medias por ciclo")
+        return None
+
+
 @notas_bp.route("/notas", methods=["GET", "POST"])
 def notas():
 
@@ -48,7 +85,9 @@ def notas():
     return render_template(
         "notas.html",
         alunos=alunos,
-        notas=notas
+        notas=notas,
+        medias_ciclos=_medias_ciclos(),
+        evolucao_ciclos=_evolucao_ciclos()
     )
 
 

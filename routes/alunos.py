@@ -420,6 +420,7 @@ def listar_alunos():
         "alunos.html",
         alunos=alunos,
         alunos_agrupados=alunos_agrupados,
+        ciclos_resumo=_resumo_ciclos_alunos(),
         necessidades=necessidades,
         objetivos=objetivos,
     )
@@ -1054,3 +1055,22 @@ def pdf_aluno(id):
         as_attachment=False,
         download_name=f"aluno_{aluno.codigo}.pdf",
     )
+
+
+def _resumo_ciclos_alunos():
+    """Ciclo de cada aluno da lista (mesma regra do ciclos.py). So leitura. Devolve None se falhar."""
+    import logging
+    try:
+        from sqlalchemy import text
+        from ciclos import ANO_TURMA_SQL, resumo_alunos
+        linhas = db.session.execute(text(
+            f"SELECT a.id, a.turma, {ANO_TURMA_SQL} AS ano_turma FROM alunos a"
+        )).mappings().all()
+        return resumo_alunos([dict(l) for l in linhas])
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        logging.exception("Nao foi possivel calcular os ciclos da lista de alunos")
+        return None
