@@ -840,8 +840,10 @@ document.addEventListener("DOMContentLoaded", function () {
                                 '{{ item.id }}',
                                 '{{ item.aluno.nome|e }}',
                                 '{{ item.hora_inicio_estudo or item.hora_entrada }}',
-                                '{{ item.hora_saida }}'
-                            )">
+                                '{{ item.hora_saida }}',
+                                this.dataset.disciplinas
+                            )"
+                            data-disciplinas="{{ item.disciplinas or '' }}">
                             ✏️ Corrigir
                         </button>
 
@@ -1110,6 +1112,77 @@ window.addEventListener("click", function (event) {
                    type="time"
                    required>
 
+            <style>
+            .modal-correcao { max-height:90vh; overflow-y:auto; }
+            .modal-correcao .disc-grelha-correcao {
+                display:grid !important;
+                grid-template-columns:repeat(2,minmax(0,1fr));
+                gap:8px;
+                margin:8px 0 10px 0;
+            }
+            .modal-correcao label.disc-opcao-correcao {
+                display:flex !important;
+                flex-direction:row;
+                align-items:center;
+                justify-content:flex-start !important;
+                gap:8px;
+                margin:0 !important;
+                padding:9px 10px;
+                border:1px solid #d1d5db;
+                border-radius:10px;
+                background:#f9fafb;
+                font-weight:500;
+                font-size:14px;
+                line-height:1.2;
+                text-align:left !important;
+                cursor:pointer;
+                box-sizing:border-box;
+            }
+            .modal-correcao label.disc-opcao-correcao input[type=checkbox] {
+                width:18px !important;
+                height:18px !important;
+                min-width:18px;
+                flex:0 0 18px;
+                margin:0 !important;
+                padding:0 !important;
+                accent-color:#2563eb;
+            }
+            .modal-correcao label.disc-opcao-correcao:has(input:checked) {
+                background:#dbeafe;
+                border-color:#2563eb;
+                color:#1e3a8a;
+            }
+            .modal-correcao #outrosDescricaoCorrecao { margin-top:0 !important; }
+            </style>
+
+            <input type="hidden" name="atualizar_disciplinas" value="1">
+
+            <label>Disciplinas estudadas</label>
+
+            <div class="disc-grelha-correcao">
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Português"> Português</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Matemática"> Matemática</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Inglês"> Inglês</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Estudo do Meio"> Estudo do Meio</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Ciências da Natureza"> Ciências da Natureza</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="HGP"> HGP</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="História"> História</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Geografia"> Geografia</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Físico-Química"> Físico-Química</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Francês"> Francês</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Espanhol"> Espanhol</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="TPC"> TPC</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" name="disciplinas" value="Fichas"> Fichas</label>
+                <label class="disc-opcao-correcao"><input type="checkbox" id="outrosCheckCorrecao" name="disciplinas" value="Outros"> Outros</label>
+            </div>
+
+            <input id="outrosDescricaoCorrecao"
+                   type="text"
+                   name="outros_descricao"
+                   placeholder="Outros: indique qual"
+                   oninput="if(this.value.trim()){document.getElementById('outrosCheckCorrecao').checked=true;}"
+                   style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d1d5db;border-radius:9px;margin-top:8px;font-size:15px;">
+
             <div class="modal-botoes">
 
                 <button type="button"
@@ -1266,13 +1339,52 @@ function fecharModalSaida() {
     document.getElementById("tipo_saida").value = "";
 }
 
-function abrirCorrecao(id, nome, entrada, saida) {
+function preencherDisciplinasCorrecao(texto) {
+
+    const caixas = document.querySelectorAll(
+        '#modalCorrecao input[name="disciplinas"]'
+    );
+
+    caixas.forEach(function (c) { c.checked = false; });
+
+    const campoOutros = document.getElementById("outrosDescricaoCorrecao");
+    campoOutros.value = "";
+
+    texto = (texto || "").trim();
+
+    if (!texto || texto === "\u2014") {
+        return;
+    }
+
+    let resto = texto;
+    const pos = texto.indexOf("Outros:");
+
+    if (pos >= 0) {
+        campoOutros.value = texto.substring(pos + 7).trim();
+        resto = texto.substring(0, pos);
+        document.getElementById("outrosCheckCorrecao").checked = true;
+    }
+
+    const lista = resto.split(",")
+        .map(function (s) { return s.trim(); })
+        .filter(Boolean);
+
+    caixas.forEach(function (c) {
+        if (lista.indexOf(c.value) >= 0) {
+            c.checked = true;
+        }
+    });
+}
+
+function abrirCorrecao(id, nome, entrada, saida, disciplinas) {
 
     document.getElementById("nomeAlunoCorrecao").textContent =
         "Aluno: " + nome;
 
     document.getElementById("horaEntradaCorrecao").value = entrada;
     document.getElementById("horaSaidaCorrecao").value = saida;
+
+    preencherDisciplinasCorrecao(disciplinas);
 
     document.getElementById("formCorrecao").action =
         "/frequencias/corrigir/" + id;
