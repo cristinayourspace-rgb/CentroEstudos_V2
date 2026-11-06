@@ -711,6 +711,47 @@ def turma_detalhe(id):
     return render_template("turma_detalhe.html", turma=turma, alunos=alunos, disciplinas=disciplinas_da_turma(turma), horarios=horarios, dias_semana=DIAS_SEMANA)
 
 
+def _data_para_ordenar(valor):
+    texto = (valor or "").strip()[:10]
+    for formato in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(texto, formato)
+        except ValueError:
+            pass
+    return datetime.min
+
+
+@turma_bp.route("/turmas/<int:id>/notas")
+def tabela_notas_turma(id):
+    from models.nota import Nota
+
+    turma = Turma.query.get_or_404(id)
+    alunos = Aluno.query.filter_by(turma=turma.nome, escola=turma.escola).order_by(Aluno.nome.asc()).all()
+    disciplinas = disciplinas_da_turma(turma)
+    ids = [a.id for a in alunos]
+    notas = Nota.query.filter(Nota.aluno_id.in_(ids)).all() if ids else []
+
+    notas_aluno = {}
+    extras = []
+    for n in notas:
+        d = (n.disciplina or "").strip()
+        if d and d not in disciplinas and d not in extras:
+            extras.append(d)
+        notas_aluno.setdefault(n.aluno_id, {}).setdefault(d, []).append(n)
+    for por_disciplina in notas_aluno.values():
+        for lista in por_disciplina.values():
+            lista.sort(key=lambda x: _data_para_ordenar(x.data_avaliacao))
+
+    colunas = list(disciplinas) + sorted(extras)
+    return render_template(
+        "tabela_notas_turma.html",
+        turma=turma,
+        alunos=alunos,
+        colunas=colunas,
+        notas_aluno=notas_aluno,
+    )
+
+
 @turma_bp.route("/turmas/eliminar/<int:id>", methods=["POST"])
 def eliminar_turma(id):
     if session.get("perfil") == "colaborador":

@@ -433,6 +433,7 @@ def obter_alunos_infrequentes():
         if dias_ausencia > 3:
 
             resultado.append({
+                "id": aluno.id,
                 "nome": aluno.nome,
                 "dias_ausencia": dias_ausencia
             })
@@ -1165,6 +1166,18 @@ def corrigir_frequencia(frequencia_id):
         frequencia.hora_inicio_estudo = nova_entrada
     else:
         frequencia.hora_entrada = nova_entrada
+
+    if request.form.get("atualizar_disciplinas"):
+        disciplinas_novas = request.form.getlist("disciplinas")
+        outros_desc = request.form.get("outros_descricao", "").strip()
+
+        if "Outros" in disciplinas_novas:
+            disciplinas_novas.remove("Outros")
+            disciplinas_novas.append(
+                f"Outros: {outros_desc}" if outros_desc else "Outros"
+            )
+
+        frequencia.disciplinas = ", ".join(disciplinas_novas)
 
     frequencia.hora_saida = nova_saida
     frequencia.duracao_horas = nova_duracao

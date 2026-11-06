@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block titulo %}Tabela de Notas - {{ turma.nome }}{% endblock %}{% block conteudo %}
+<style>
+.tn-wrap{max-width:1250px;margin:auto}
+.tn-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:16px;flex-wrap:wrap}
+.tn-head h2{margin:0}
+.tn-muted{color:#64748b;font-size:.9rem}
+.tn-btn{padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:700;background:#f1f5f9;color:#334155}
+.tn-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
+.tn-scroll{overflow-x:auto}
+.tn-tabela{border-collapse:collapse;width:100%;min-width:520px}
+.tn-tabela th,.tn-tabela td{border-bottom:1px solid #f1f5f9;padding:9px 10px;text-align:left;vertical-align:top}
+.tn-tabela th{background:#f8fafc;font-size:.85rem;color:#334155;white-space:nowrap}
+.tn-nota{display:inline-block;margin:2px 6px 2px 0;padding:3px 8px;border-radius:8px;font-weight:700;background:#f1f5f9;color:#0f172a;font-size:.9rem}
+.tn-nota small{font-weight:400;color:#64748b;margin-left:4px}
+.tn-neg{background:#fee2e2;color:#b91c1c;box-shadow:inset 0 0 0 1px #fca5a5}
+.tn-neg small{color:#b91c1c}
+.tn-vazio{color:#cbd5e1}
+</style>
+<div class="tn-wrap">
+<div class="tn-head"><div><h2>Tabela de Notas &middot; {{ turma.nome }}</h2><div class="tn-muted">{{ turma.escola }}{% if turma.ano_escolar %} &middot; {{ turma.ano_escolar }}{% endif %} &middot; notas abaixo de 50 em destaque</div></div><a class="tn-btn" href="{{ url_for('turma.turma_detalhe', id=turma.id) }}">Voltar &agrave; turma</a></div>
+<div class="tn-card">
+{% if alunos and colunas %}
+<div class="tn-scroll"><table class="tn-tabela"><thead><tr><th>Aluno</th>{% for d in colunas %}<th>{{ d }}</th>{% endfor %}</tr></thead><tbody>
+{% for a in alunos %}<tr><td><strong><a href="{{ url_for('alunos.ver_aluno', id=a.id) }}" style="color:inherit;text-decoration:underline dotted;">{{ a.nome }}</a></strong></td>{% for d in colunas %}<td>{% set lista = notas_aluno.get(a.id, {}).get(d, []) %}{% for n in lista %}<span class="tn-nota{% if n.nota < 50 %} tn-neg{% endif %}">{{ '%g'|format(n.nota) }}<small>{{ n.data_avaliacao }}</small></span>{% else %}<span class="tn-vazio">&ndash;</span>{% endfor %}</td>{% endfor %}</tr>{% endfor %}
+</tbody></table></div>
+{% elif not alunos %}
+<span class="tn-muted">Ainda n&atilde;o h&aacute; alunos atribu&iacute;dos a esta turma.</span>
+{% else %}
+<span class="tn-muted">Esta turma ainda n&atilde;o tem disciplinas definidas nem notas lan&ccedil;adas.</span>
+{% endif %}
+</div></div>{% endblock %}

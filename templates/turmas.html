@@ -315,6 +315,11 @@
                             Editar Turma
                         </a>
 
+                        <a class="link"
+                           href="{{ url_for('turma.tabela_notas_turma', id=t.id) }}">
+                            Tabela de Notas
+                        </a>
+
                         {% if (t.escola, t.nome) in turmas_com_horario %}
                         <a class="link"
                            href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">

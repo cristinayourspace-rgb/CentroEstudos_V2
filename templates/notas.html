@@ -443,7 +443,7 @@ Gestão de Notas
                 <tbody>
                 {% for nota in notas %}
                     <tr class="{% if nota.nota is not none and nota.nota < 50 %}nota-baixa{% endif %}">
-                        <td>{{ nota.aluno.nome }}</td>
+                        <td><a href="{{ url_for('alunos.ver_aluno', id=nota.aluno.id) }}" style="color:inherit;font-weight:inherit;text-decoration:underline dotted;">{{ nota.aluno.nome }}</a></td>
                         <td>{{ nota.disciplina }}</td>
                         <td><span class="badge-nota">{{ nota.nota }}</span></td>
                         <td>{{ nota.data_avaliacao }}</td>
@@ -470,7 +470,7 @@ Gestão de Notas
 
                     <div class="full">
                         <div class="nota-label">Aluno</div>
-                        <div class="nota-valor">{{ nota.aluno.nome }}</div>
+                        <div class="nota-valor"><a href="{{ url_for('alunos.ver_aluno', id=nota.aluno.id) }}" style="color:inherit;font-weight:inherit;text-decoration:underline dotted;">{{ nota.aluno.nome }}</a></div>
                     </div>
 
                     <div>

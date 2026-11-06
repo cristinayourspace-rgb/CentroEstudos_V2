@@ -417,7 +417,7 @@
 
             <div>
                 <div class="aluno-fluxo-nome">
-                    {{ item.aluno.nome }}
+                    <a href="{{ url_for('alunos.ver_aluno', id=item.aluno.id) }}" style="color:inherit;text-decoration:underline dotted;">{{ item.aluno.nome }}</a>
                     <span style="font-size:13px;font-weight:600;margin-left:8px;
                                  color:{{ '#b91c1c' if item.horas_restantes_semana <= 0 else '#047857' }};">
                         ({{ item.horas_restantes_centesimas }} h restantes)
@@ -523,7 +523,7 @@
 
             <div>
                 <div class="aluno-fluxo-nome">
-                    {{ item.aluno.nome }}
+                    <a href="{{ url_for('alunos.ver_aluno', id=item.aluno.id) }}" style="color:inherit;text-decoration:underline dotted;">{{ item.aluno.nome }}</a>
                 </div>
 
                 <div class="aluno-fluxo-info">
@@ -622,7 +622,7 @@
                 <tr>
 
                     <td style="font-weight:600;">
-                        {{ aluno.nome }}
+                        <a href="{{ url_for('alunos.ver_aluno', id=aluno.id) }}" style="color:inherit;text-decoration:underline dotted;">{{ aluno.nome }}</a>
                     </td>
 
                     <td style="text-align:center;">
@@ -754,7 +754,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     <td>{{ item.aluno.codigo }}</td>
 
-                    <td>{{ item.aluno.nome }}</td>
+                    <td><a href="{{ url_for('alunos.ver_aluno', id=item.aluno.id) }}" style="color:inherit;text-decoration:underline dotted;">{{ item.aluno.nome }}</a></td>
 
                     <td>{{ item.data }}</td>
 
