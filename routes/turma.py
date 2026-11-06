@@ -407,8 +407,7 @@ def atribuicao_salas():
 
         if numero_salas < 1 or numero_salas > 20:
             dados = obter_atribuicao_salas_semanal()
-            return render_template(
-                "atribuicao_salas.html",
+            return render_template("atribuicao_salas.html", contagem_turmas=_contagem_alunos_por_turma_id(),
                 **dados,
                 turmas=turmas,
                 erro="Indique um número de salas entre 1 e 20.",
@@ -514,8 +513,7 @@ def atribuicao_salas():
 
     dados = obter_atribuicao_salas_semanal()
 
-    return render_template(
-        "atribuicao_salas.html",
+    return render_template("atribuicao_salas.html", contagem_turmas=_contagem_alunos_por_turma_id(),
         **dados,
         turmas=turmas,
         erro=None,
@@ -797,3 +795,15 @@ def atribuir_turma():
         db.session.commit()
         return redirect(url_for("turma.turma_detalhe", id=turma.id, atribuicao=1))
     return render_template("atribuir_turmas.html", turmas=turmas, alunos=alunos, erro=None)
+
+
+def _contagem_alunos_por_turma_id():
+    """Alunos ativos por turma (id da turma -> numero de alunos)."""
+    cont = {}
+    for a in Aluno.query.filter_by(ativo=True).all():
+        k = ((a.turma or "").strip(), (a.escola or "").strip())
+        cont[k] = cont.get(k, 0) + 1
+    return {
+        t.id: cont.get(((t.nome or "").strip(), (t.escola or "").strip()), 0)
+        for t in Turma.query.all()
+    }

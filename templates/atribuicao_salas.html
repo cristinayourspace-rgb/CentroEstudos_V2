@@ -138,7 +138,7 @@
                         </div>
 
                         {% for bloco in sala.blocos %}
-                        <div class="bloco-secao">
+                        <div class="bloco-secao" data-inicio="{{ bloco.hora_inicio }}" data-fim="{{ bloco.hora_fim }}">
                             <div class="bloco-secao-titulo">
                                 {{ bloco.hora_inicio }} – {{ bloco.hora_fim }}
                             </div>
@@ -364,4 +364,243 @@ function prepararBloco(dia) {
 }
 </script>
 
+
+<style>
+.cnt-bloco{background:#ecfdf5;color:#047857;border-radius:8px;padding:6px 10px;font-weight:800;font-size:.85rem;margin-bottom:8px}
+.cnt-sala{background:#dbeafe;color:#1d4ed8;border-radius:10px;padding:9px 12px;font-weight:900;margin-bottom:12px}
+.cnt-dia{background:#ede9fe;color:#5b21b6;border-radius:10px;padding:9px 12px;font-weight:900;margin-bottom:12px;display:inline-block}
+</style>
+
+<style>
+.cnt-horaria {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0 14px;
+}
+.cnt-horaria-titulo {
+    font-weight: 900;
+    color: #334155;
+    margin-bottom: 8px;
+}
+.cnt-horaria-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cnt-hora-item {
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-weight: 800;
+    text-align: center;
+}
+.cnt-hora-item strong {
+    display: block;
+    font-size: 1.25rem;
+}
+.cnt-hora-item small {
+    font-size: .75rem;
+}
+</style>
+
+<script>
+const CONTAGEM_TURMAS = {{ contagem_turmas|tojson }};
+
+function valoresTurmas(container) {
+    const ids = new Set();
+    let total = 0;
+
+    container.querySelectorAll('select[name^="turma__"]').forEach(function(s) {
+        if (s.value && !ids.has(s.value)) {
+            ids.add(s.value);
+            total += Number(CONTAGEM_TURMAS[s.value] || 0);
+        }
+    });
+
+    return total;
+}
+
+function minutos(hora) {
+    if (!hora || !/^\d{2}:\d{2}$/.test(hora)) return null;
+    const partes = hora.split(':');
+    return Number(partes[0]) * 60 + Number(partes[1]);
+}
+
+function formatarHora(valor) {
+    const h = Math.floor(valor / 60);
+    return String(h).padStart(2, '0') + ':00';
+}
+
+function calcularOcupacaoHoraria(sala) {
+    const blocos = Array.from(sala.querySelectorAll('.bloco-secao'));
+    const intervalos = [];
+
+    blocos.forEach(function(bloco) {
+        const inicio = minutos(bloco.dataset.inicio);
+        const fim = minutos(bloco.dataset.fim);
+
+        if (inicio === null || fim === null || fim <= inicio) return;
+
+        const ids = new Set();
+
+        bloco.querySelectorAll('select[name^="turma__"]').forEach(function(select) {
+            if (select.value) ids.add(select.value);
+        });
+
+        intervalos.push({inicio, fim, ids});
+    });
+
+    if (!intervalos.length) return [];
+
+    const inicioGeral = Math.floor(
+        Math.min(...intervalos.map(x => x.inicio)) / 60
+    ) * 60;
+
+    const fimGeral = Math.ceil(
+        Math.max(...intervalos.map(x => x.fim)) / 60
+    ) * 60;
+
+    const resultado = [];
+
+    for (let hora = inicioGeral; hora < fimGeral; hora += 60) {
+        const idsHora = new Set();
+
+        intervalos.forEach(function(bloco) {
+            const sobrepoe = bloco.inicio < hora + 60 &&
+                             bloco.fim > hora;
+
+            if (sobrepoe) {
+                bloco.ids.forEach(id => idsHora.add(id));
+            }
+        });
+
+        let total = 0;
+
+        idsHora.forEach(function(id) {
+            total += Number(CONTAGEM_TURMAS[id] || 0);
+        });
+
+        resultado.push({
+            inicio: hora,
+            fim: hora + 60,
+            total: total
+        });
+    }
+
+    return resultado;
+}
+
+function recalcularContagem() {
+    document.querySelectorAll('.dia-salas').forEach(function(dia) {
+
+        const cabecalho = dia.firstElementChild;
+
+        let totDia = dia.querySelector('.cnt-dia');
+
+        if (!totDia) {
+            totDia = document.createElement('div');
+            totDia.className = 'cnt-dia';
+            cabecalho.insertAdjacentElement('afterend', totDia);
+        }
+
+        totDia.textContent =
+            'Alunos distintos neste dia: ' + valoresTurmas(dia);
+
+        dia.querySelectorAll('.sala-card').forEach(function(sala) {
+
+            const titulo = sala.querySelector('.sala-titulo');
+
+            let totSala = sala.querySelector('.cnt-sala');
+
+            if (!totSala) {
+                totSala = document.createElement('div');
+                totSala.className = 'cnt-sala';
+                titulo.insertAdjacentElement('afterend', totSala);
+            }
+
+            totSala.textContent =
+                'Total de alunos nesta sala no dia: ' + valoresTurmas(sala);
+
+            // Nova contagem por hora
+            let painel = sala.querySelector('.cnt-horaria');
+
+            if (!painel) {
+                painel = document.createElement('div');
+                painel.className = 'cnt-horaria';
+                totSala.insertAdjacentElement('afterend', painel);
+            }
+
+            const horas = calcularOcupacaoHoraria(sala);
+
+            painel.replaceChildren();
+
+            if (horas.length) {
+                const subtitulo = document.createElement('div');
+                subtitulo.className = 'cnt-horaria-titulo';
+                subtitulo.textContent = 'OCUPAÇÃO POR HORA';
+                painel.appendChild(subtitulo);
+
+                const lista = document.createElement('div');
+                lista.className = 'cnt-horaria-lista';
+
+                horas.forEach(function(item) {
+                    const cartao = document.createElement('div');
+                    cartao.className = 'cnt-hora-item';
+
+                    const numero = document.createElement('strong');
+                    numero.textContent = item.total;
+
+                    const legenda = document.createElement('small');
+                    legenda.textContent =
+                        formatarHora(item.inicio) + ' – ' +
+                        formatarHora(item.fim);
+
+                    cartao.appendChild(numero);
+                    cartao.appendChild(legenda);
+                    lista.appendChild(cartao);
+                });
+
+                painel.appendChild(lista);
+            } else {
+                painel.remove();
+            }
+
+            // Manter a contagem original de cada bloco
+            sala.querySelectorAll('.bloco-secao').forEach(function(bloco) {
+
+                const linhas = bloco.querySelector('.linhas');
+
+                if (!linhas) return;
+
+                let b = bloco.querySelector('.cnt-bloco');
+
+                if (!b) {
+                    b = document.createElement('div');
+                    b.className = 'cnt-bloco';
+                    linhas.parentNode.insertBefore(b, linhas);
+                }
+
+                b.textContent =
+                    '≈ ' + valoresTurmas(bloco) + ' alunos neste bloco';
+            });
+        });
+    });
+}
+
+document.addEventListener('change', recalcularContagem);
+
+document.addEventListener('input', recalcularContagem);
+
+document.addEventListener('click', function() {
+    setTimeout(recalcularContagem, 0);
+});
+
+document.addEventListener('DOMContentLoaded', recalcularContagem);
+
+recalcularContagem();
+</script>
 {% endblock %}
