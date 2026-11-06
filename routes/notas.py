@@ -15,7 +15,7 @@ import logging
 
 from sqlalchemy import text
 
-from ciclos import ANO_TURMA_SQL, evolucao_notas, medias_notas
+from ciclos import ANO_TURMA_SQL, disciplina_ciencias, evolucao_notas, medias_notas
 
 
 def _medias_ciclos():
@@ -64,7 +64,7 @@ def notas():
 
         nota = Nota(
             aluno_id=request.form["aluno_id"],
-            disciplina=request.form["disciplina"],
+            disciplina=disciplina_ciencias(request.form["disciplina"]),
             nota=float(request.form["nota"]),
             data_avaliacao=request.form["data_avaliacao"]
         )
@@ -107,7 +107,7 @@ def editar_nota(id):
 
     if request.method == "POST":
 
-        nota.disciplina = request.form["disciplina"]
+        nota.disciplina = disciplina_ciencias(request.form["disciplina"])
 
         nota.nota = float(
             request.form["nota"]

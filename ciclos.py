@@ -16,6 +16,7 @@ CANON = {
     "portugues": "Portugu\u00eas",
     "ingles": "Ingl\u00eas", "ing": "Ingl\u00eas",
     "ciencias": "Ci\u00eancias", "ciencias naturais": "Ci\u00eancias",
+    "ciencias da natureza": "Ci\u00eancias",
     "fisico quimica": "F\u00edsico-Qu\u00edmica",
     "hgp": "HGP", "historia e geografia de portugal": "HGP",
     "historia": "Hist\u00f3ria", "geografia": "Geografia",
@@ -32,6 +33,16 @@ def _norm(texto):
 
 def disciplina_norm(texto):
     return CANON.get(_norm(texto), (texto or "").strip() or "Sem disciplina")
+
+
+CIENCIAS_VARIANTES = ("ciencias", "ciencias naturais", "ciencias da natureza")
+
+
+def disciplina_ciencias(texto):
+    """Junta Ciencias, Ciencias Naturais e Ciencias da Natureza num so nome (Ciencias).
+    Outros valores ficam como estao (sem espacos nas pontas)."""
+    t = (texto or "").strip()
+    return "Ci\u00eancias" if _norm(t) in CIENCIAS_VARIANTES else t
 
 
 def ano_de(texto):

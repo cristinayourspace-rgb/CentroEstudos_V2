@@ -25,6 +25,9 @@ from models.atribuicao_sala import (
 )
 
 
+from ciclos import disciplina_ciencias
+
+
 turma_bp = Blueprint("turma", __name__)
 
 DIAS_ATRIBUICAO_SALAS = [
@@ -41,11 +44,11 @@ DISCIPLINAS_POR_ANO = {
     "2.º Ano": ["Português", "Matemática", "Estudo do Meio"],
     "3.º Ano": ["Português", "Matemática", "Estudo do Meio", "Inglês"],
     "4.º Ano": ["Português", "Matemática", "Estudo do Meio", "Inglês"],
-    "5.º Ano": ["Português", "Matemática", "Inglês", "História e Geografia de Portugal", "Ciências Naturais"],
-    "6.º Ano": ["Português", "Matemática", "Inglês", "História e Geografia de Portugal", "Ciências Naturais"],
-    "7.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
-    "8.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
-    "9.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências Naturais", "Físico-Química"],
+    "5.º Ano": ["Português", "Matemática", "Inglês", "História e Geografia de Portugal", "Ciências"],
+    "6.º Ano": ["Português", "Matemática", "Inglês", "História e Geografia de Portugal", "Ciências"],
+    "7.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências", "Físico-Química"],
+    "8.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências", "Físico-Química"],
+    "9.º Ano": ["Português", "Matemática", "Inglês", "Francês", "Espanhol", "Alemão", "História", "Geografia", "Ciências", "Físico-Química"],
     "10.º Ano": ["Outros"],
     "11.º Ano": ["Outros"],
     "12.º Ano": ["Outros"],
@@ -70,7 +73,12 @@ def disciplinas_da_turma(turma):
     try:
         dados = json.loads(turma.disciplinas or "[]")
         if isinstance(dados, list):
-            return [str(x).strip() for x in dados if str(x).strip()]
+            resultado = []
+            for x in dados:
+                nome = disciplina_ciencias(str(x))
+                if nome and nome not in resultado:
+                    resultado.append(nome)
+            return resultado
     except (TypeError, ValueError):
         pass
     return []
@@ -734,7 +742,7 @@ def tabela_notas_turma(id):
     notas_aluno = {}
     extras = []
     for n in notas:
-        d = (n.disciplina or "").strip()
+        d = disciplina_ciencias(n.disciplina)
         if d and d not in disciplinas and d not in extras:
             extras.append(d)
         notas_aluno.setdefault(n.aluno_id, {}).setdefault(d, []).append(n)
