@@ -223,15 +223,8 @@
                     </summary>
                     <div class="ml-6 mt-1 space-y-1 border-l border-gray-200 pl-3">
 
-                        <details class="menu-sub"{% if request.path == '/turmas/criar' or request.path.startswith('/turmas/atribuir') %} open{% endif %}>
-                            <summary class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">
-                                <a href="/turmas/criar">Criar turmas</a>
-                                <i class="fa-solid fa-chevron-down seta text-xs ml-auto"></i>
-                            </summary>
-                            <div class="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
-                                <a href="/turmas/atribuir" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Atribuir turmas</a>
-                            </div>
-                        </details>
+                        <a href="/turmas/criar" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Criar turmas</a>
+                        <a href="/turmas/atribuir" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Atribuir turmas</a>
 
                         <a href="/turmas" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Listar turmas</a>
 
