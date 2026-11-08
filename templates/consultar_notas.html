@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block titulo %}Consultar notas{% endblock %}{% block conteudo %}
+<style>
+.cn-wrap{max-width:720px;margin:auto}
+.cn-wrap h2{margin:0 0 6px}
+.cn-muted{color:#64748b;font-size:.92rem;margin-bottom:16px}
+.cn-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px}
+.cn-campo{width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:12px;font-size:1rem;margin-bottom:12px}
+.cn-btn{padding:11px 16px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}
+.cn-erro{color:#b91c1c;font-weight:600;margin-top:12px}
+.cn-lista a{display:block;padding:10px 12px;margin-top:8px;border-radius:10px;background:#f1f5f9;color:#0f172a;text-decoration:none;font-weight:600}
+</style>
+<div class="cn-wrap">
+<h2>Consultar notas</h2>
+<div class="cn-muted">Escreva ou escolha a turma para abrir a tabela de notas.</div>
+<div class="cn-card">
+<form method="get" action="{{ url_for('turma.consultar_notas_turma') }}">
+<input class="cn-campo" type="text" name="turma" list="lista-turmas" value="{{ pedido }}" placeholder="Ex.: 8D" autocomplete="off" autofocus>
+<datalist id="lista-turmas">{% for o in opcoes %}<option value="{{ o.rotulo }}">{% endfor %}</datalist>
+<button class="cn-btn" type="submit">Abrir tabela de notas</button>
+</form>
+{% if mensagem %}<div class="cn-erro">{{ mensagem }}</div>{% endif %}
+{% if encontradas|length > 1 %}<div class="cn-lista"><p style="margin-top:14px">H&aacute; mais de uma turma com esse nome. Escolha:</p>{% for e in encontradas %}<a href="{{ url_for('turma.tabela_notas_turma', id=e.id) }}">{{ e.rotulo }}</a>{% endfor %}</div>{% endif %}
+</div></div>{% endblock %}

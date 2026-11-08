@@ -400,6 +400,10 @@ def atribuicao_salas():
     turmas = _ordenar_turmas(Turma.query.all())
 
     if request.method == "POST":
+        dia_escolhido = request.form.get("dia", "").strip()
+        if dia_escolhido not in dict(DIAS_ATRIBUICAO_SALAS):
+            return redirect(url_for("turma.atribuicao_salas"))
+
         try:
             numero_salas = int(request.form.get("numero_salas", "0"))
         except ValueError:
@@ -411,6 +415,8 @@ def atribuicao_salas():
                 **dados,
                 turmas=turmas,
                 erro="Indique um número de salas entre 1 e 20.",
+                dia_escolhido=dia_escolhido,
+                dias_semana=DIAS_ATRIBUICAO_SALAS,
             )
 
         config = ConfiguracaoSalas.query.first()
@@ -420,7 +426,12 @@ def atribuicao_salas():
         else:
             config.numero_salas = numero_salas
 
-        antigos = PlaneamentoSala.query.all()
+        # So o dia escolhido e reescrito. Se o numero de salas mudou, as salas
+        # acima do novo numero deixam de existir em todos os dias.
+        antigos = [
+            p for p in PlaneamentoSala.query.all()
+            if p.dia_semana == dia_escolhido or p.sala_numero > numero_salas
+        ]
 
         for planeamento in antigos:
             AtribuicaoSala.query.filter_by(
@@ -433,6 +444,19 @@ def atribuicao_salas():
         )
 
         for chave_dia, _titulo in DIAS_ATRIBUICAO_SALAS:
+            if chave_dia != dia_escolhido:
+                # Dias nao escolhidos ficam como estao; so se criam as salas que faltem (vazias).
+                ja = {
+                    p.sala_numero
+                    for p in PlaneamentoSala.query.filter_by(dia_semana=chave_dia).all()
+                }
+                for sala_numero in range(1, numero_salas + 1):
+                    if sala_numero not in ja:
+                        db.session.add(
+                            PlaneamentoSala(dia_semana=chave_dia, sala_numero=sala_numero)
+                        )
+                continue
+
             blocos_dia = _blocos_do_dia(chave_dia)
             blocos_ids_validos = {bloco.id for bloco in blocos_dia}
 
@@ -517,6 +541,8 @@ def atribuicao_salas():
         **dados,
         turmas=turmas,
         erro=None,
+        dia_escolhido=(request.args.get("dia") if request.args.get("dia") in dict(DIAS_ATRIBUICAO_SALAS) else None),
+        dias_semana=DIAS_ATRIBUICAO_SALAS,
     )
 
 
@@ -596,7 +622,7 @@ def adicionar_bloco_atribuicao():
         flash("Indique a hora de início e a hora de fim do bloco.")
 
     return redirect(
-        url_for("turma.atribuicao_salas") + f"#dia-{dia}"
+        url_for("turma.atribuicao_salas", dia=dia) + f"#dia-{dia}"
     )
 
 
@@ -619,7 +645,7 @@ def remover_bloco_atribuicao(id):
     db.session.commit()
 
     return redirect(
-        url_for("turma.atribuicao_salas") + f"#dia-{dia}"
+        url_for("turma.atribuicao_salas", dia=dia) + f"#dia-{dia}"
     )
 
 
@@ -755,6 +781,36 @@ def tabela_notas_turma(id):
         alunos=alunos,
         colunas=colunas,
         notas_aluno=notas_aluno,
+    )
+
+
+def _rotulo_turma(turma):
+    nome = (turma.nome or "").strip()
+    escola = (turma.escola or "").strip()
+    return nome + " \u00b7 " + escola if escola else nome
+
+
+@turma_bp.route("/turmas/consultar-notas")
+def consultar_notas_turma():
+    turmas = _ordenar_turmas(Turma.query.all())
+    pedido = (request.args.get("turma") or "").strip()
+    encontradas = []
+    mensagem = ""
+    if pedido:
+        alvo = pedido.casefold()
+        encontradas = [t for t in turmas if _rotulo_turma(t).casefold() == alvo]
+        if not encontradas:
+            encontradas = [t for t in turmas if (t.nome or "").strip().casefold() == alvo]
+        if len(encontradas) == 1:
+            return redirect(url_for("turma.tabela_notas_turma", id=encontradas[0].id))
+        if not encontradas:
+            mensagem = "Turma n\u00e3o encontrada. Escolha uma da lista."
+    return render_template(
+        "consultar_notas.html",
+        opcoes=[{"id": t.id, "rotulo": _rotulo_turma(t)} for t in turmas],
+        encontradas=[{"id": t.id, "rotulo": _rotulo_turma(t)} for t in encontradas],
+        pedido=pedido,
+        mensagem=mensagem,
     )
 
 

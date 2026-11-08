@@ -206,21 +206,61 @@
 
                 </a>
 
-                <a href="/notas"
-                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+                
 
-                    <i class="fa-solid fa-file-lines text-lg w-6"></i>
-                    <span class="font-medium text-base">Notas</span>
+                <style>
+                .menu-sub summary{list-style:none;cursor:pointer}
+                .menu-sub summary::-webkit-details-marker{display:none}
+                .menu-sub .seta{transition:transform .2s}
+                .menu-sub[open] > summary .seta{transform:rotate(180deg)}
+                .menu-sub summary a{color:inherit;text-decoration:none;flex:1}
+                </style>
+                <details class="menu-sub"{% if request.path.startswith('/turmas') or request.path.startswith('/horarios') or 'notas' in request.path %} open{% endif %}>
+                    <summary class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+                        <i class="fa-solid fa-people-group text-lg w-6"></i>
+                        <span class="font-medium text-base">Turmas</span>
+                        <i class="fa-solid fa-chevron-down seta text-xs ml-auto"></i>
+                    </summary>
+                    <div class="ml-6 mt-1 space-y-1 border-l border-gray-200 pl-3">
 
-                </a>
+                        <details class="menu-sub"{% if request.path == '/turmas/criar' or request.path.startswith('/turmas/atribuir') %} open{% endif %}>
+                            <summary class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">
+                                <a href="/turmas/criar">Criar turmas</a>
+                                <i class="fa-solid fa-chevron-down seta text-xs ml-auto"></i>
+                            </summary>
+                            <div class="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
+                                <a href="/turmas/atribuir" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Atribuir turmas</a>
+                            </div>
+                        </details>
 
-                <a href="/turmas"
-                   class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
+                        <a href="/turmas" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Listar turmas</a>
 
-                    <i class="fa-solid fa-people-group text-lg w-6"></i>
-                    <span class="font-medium text-base">Turmas</span>
+                        <a href="/turmas/atribuicao-salas" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Salas</a>
 
-                </a>
+                        <details class="menu-sub"{% if request.path.startswith('/horarios') %} open{% endif %}>
+                            <summary class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">
+                                <span>Hor&aacute;rios</span>
+                                <i class="fa-solid fa-chevron-down seta text-xs ml-auto"></i>
+                            </summary>
+                            <div class="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
+                                <a href="/horarios/novo" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Criar hor&aacute;rios</a>
+                                <a href="/horarios" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Ver hor&aacute;rios</a>
+                            </div>
+                        </details>
+
+                        <details class="menu-sub"{% if 'notas' in request.path %} open{% endif %}>
+                            <summary class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">
+                                <span>Notas</span>
+                                <i class="fa-solid fa-chevron-down seta text-xs ml-auto"></i>
+                            </summary>
+                            <div class="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
+                                <a href="/notas" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Gest&atilde;o de notas</a>
+                                <a href="/turmas/consultar-notas" class="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm">Consultar notas</a>
+                            </div>
+                        </details>
+
+                    </div>
+                </details>
 
                 <a href="/calendario"
                    class="flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
@@ -403,6 +443,18 @@
         {% endif %}
 
         <main class="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-8 pb-8">
+
+            {% if request.path not in ['/', '/login'] %}
+            <div class="no-print" style="margin-bottom:14px;">
+                <button type="button" class="btn-voltar"
+                        onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '/'; }"
+                        style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:12px;background:#e2e8f0;color:#334155;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
+            </div>
+            <style>@media print{.no-print{display:none !important}}</style>
+            {% endif %}
+
 
             {% with mensagens = get_flashed_messages(with_categories=true) %}
             {% if mensagens %}

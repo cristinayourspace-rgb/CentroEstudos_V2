@@ -377,6 +377,17 @@ def inicio():
         Frequencia.aluno_id
     ).distinct().count()
 
+    alunos_concluidos_hoje = Frequencia.query.filter(
+        Frequencia.data == hoje,
+        Frequencia.hora_saida.is_not(None),
+        db.or_(
+            Frequencia.observacoes.is_(None),
+            ~Frequencia.observacoes.startswith("[ANULADO]")
+        )
+    ).with_entities(
+        Frequencia.aluno_id
+    ).distinct().count()
+
     total_frequencias = Frequencia.query.count()
 
     total_notas = Nota.query.count()
@@ -403,6 +414,7 @@ def inicio():
         alunos_ativos=alunos_ativos,
         alunos_em_estudo=alunos_em_estudo,
         total_frequencias=total_frequencias,
+        alunos_concluidos_hoje=alunos_concluidos_hoje,
         total_notas=total_notas,
         media_geral=media_geral,
         atribuicao_salas_hoje=atribuicao_salas_hoje

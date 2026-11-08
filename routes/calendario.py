@@ -251,8 +251,28 @@ def calendario():
 
         db.session.commit()
 
+        # Abre o mes da data que acabou de ser guardada.
+        data_guardada = request.form.get(
+            "data_teste" if registo_tipo == "teste" else "data",
+            ""
+        )
+
+        try:
+            ano_guardado = int(data_guardada[0:4])
+            mes_guardado = int(data_guardada[5:7])
+            if not 1 <= mes_guardado <= 12:
+                raise ValueError
+        except ValueError:
+            return redirect(
+                url_for("calendario.calendario")
+            )
+
         return redirect(
-            url_for("calendario.calendario")
+            url_for(
+                "calendario.calendario",
+                mes=mes_guardado,
+                ano=ano_guardado
+            )
         )
 
     hoje = datetime.today()

@@ -3,6 +3,31 @@
 {% block titulo %}Atribuição de Salas{% endblock %}
 
 {% block conteudo %}
+{% set dias = (dias | selectattr('chave', 'equalto', dia_escolhido) | list) if dia_escolhido else [] %}
+{% if not dia_escolhido %}
+<style>#form-salas{display:none;}</style>
+<div id="modal-dia" role="dialog" aria-modal="true" aria-labelledby="modal-dia-titulo"
+     style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:420px;width:92%;box-shadow:0 10px 30px rgba(0,0,0,.25);">
+        <h3 id="modal-dia-titulo" style="margin:0 0 6px;">Escolher o dia</h3>
+        <p style="margin:0 0 14px;color:#64748b;font-size:14px;">Escolha o dia da semana para fazer a atribui&ccedil;&atilde;o das salas.</p>
+        <div style="display:grid;gap:8px;">
+            {% for chave, titulo in dias_semana %}
+            <a href="{{ url_for('turma.atribuicao_salas', dia=chave) }}"
+               style="display:block;text-align:center;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;text-decoration:none;color:#0f172a;font-weight:600;">{{ titulo }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 12px;">
+    <strong>Atribui&ccedil;&atilde;o de salas &mdash;
+        {% for chave, titulo in dias_semana %}{% if chave == dia_escolhido %}{{ titulo }}{% endif %}{% endfor %}
+    </strong>
+    <a href="{{ url_for('turma.atribuicao_salas') }}"
+       style="padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;text-decoration:none;color:inherit;">Mudar de dia</a>
+</div>
+{% endif %}
 
 <style>
 .wrap-salas{max-width:1400px;margin:0 auto}
@@ -54,9 +79,6 @@
             </p>
         </div>
 
-        <a class="btn-sala btn-neutral" href="{{ url_for('turma.turmas') }}">
-            Voltar a Turmas
-        </a>
     </div>
 
     {% if erro %}
@@ -75,6 +97,7 @@
         </div>
 
         <form method="POST" id="form-salas" style="margin-top:14px;">
+<input type="hidden" name="dia" value="{{ dia_escolhido or '' }}">
 
             <div style="display:flex;align-items:flex-end;gap:15px;flex-wrap:wrap;">
                 <div style="width:180px;">

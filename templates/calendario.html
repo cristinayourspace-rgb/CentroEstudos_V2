@@ -332,6 +332,125 @@ Calendário do Centro
     <p>Gestão de testes, eventos e dias especiais</p>
 </div>
 
+<style>
+    .formularios-grid{margin:0 0 24px 0}
+    .formularios-grid .card{background:#fff;border:0;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);padding:24px}
+    .formularios-grid .card h3{margin:0 0 16px 0;font-size:1.15rem;font-weight:700;color:#1f2937}
+    .formularios-grid input[type="text"],
+    .formularios-grid input[type="date"],
+    .formularios-grid select,
+    .formularios-grid textarea{width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;font-size:.95rem;color:#1f2937}
+    .formularios-grid input[type="text"]:focus,
+    .formularios-grid input[type="date"]:focus,
+    .formularios-grid select:focus,
+    .formularios-grid textarea:focus{outline:0;border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
+    .formularios-grid .rodape-form button{background:#2563eb;color:#fff;border:0;border-radius:12px;padding:11px 20px;font-weight:600;cursor:pointer}
+    .formularios-grid .rodape-form button:hover{background:#1d4ed8}
+</style>
+
+{# ── Formulários: Novo Teste / Novo Evento ─────────────────────────────── #}
+<div class="formularios-grid">
+
+    {# ── Novo Teste ───────────────────────────────────────────────────── #}
+    <div class="card">
+
+        <h3>Novo Teste</h3>
+
+        <form method="POST">
+
+            <input type="hidden" name="registo_tipo" value="teste">
+
+            <label class="campo-label">Escola</label>
+            <input
+                type="text"
+                name="escola"
+                list="lista-escolas"
+                required
+            >
+
+            <datalist id="lista-escolas">
+                {% for escola in escolas %}
+                    <option value="{{ escola }}"></option>
+                {% endfor %}
+            </datalist>
+
+            <label class="campo-label">Turma</label>
+            <input
+                type="text"
+                name="turma"
+                list="lista-turmas"
+                required
+            >
+
+            <datalist id="lista-turmas">
+                {% for turma in turmas %}
+                    <option value="{{ turma }}"></option>
+                {% endfor %}
+            </datalist>
+
+            <label class="campo-label">Disciplina</label>
+            <input type="text" name="disciplina" required>
+
+            <label class="campo-label">Data</label>
+            <input type="date" name="data_teste" required>
+
+            <label class="campo-label">Matriz</label>
+            <textarea name="matriz" rows="4"></textarea>
+
+            <label class="campo-label">Observações</label>
+            <textarea name="observacoes" rows="4"></textarea>
+
+            <div class="rodape-form">
+                <button type="submit">Guardar Teste</button>
+            </div>
+
+        </form>
+
+    </div>
+
+    {# ── Novo Evento do Centro ────────────────────────────────────────── #}
+    <div class="card">
+
+        <h3>Novo Evento do Centro</h3>
+
+        <form method="POST">
+
+            <input type="hidden" name="registo_tipo" value="evento">
+
+            <label class="campo-label">Data</label>
+            <input type="date" name="data" required>
+
+            <label class="campo-label">Tipo</label>
+            <select name="tipo" required>
+                <option value="Reunião">Reunião</option>
+                <option value="Aviso">Aviso</option>
+                <option value="Feriado">Feriado</option>
+                <option value="Paragem Letiva">Paragem Letiva</option>
+                <option value="Férias">Férias</option>
+                <option value="Outros">Outros</option>
+            </select>
+
+            <label class="campo-label">Título</label>
+            <input type="text" name="titulo" required>
+
+            <label class="campo-label">Descrição</label>
+            <textarea name="descricao" rows="4"></textarea>
+
+            <div class="campo-checkbox">
+                <input type="checkbox" name="nao_letivo" id="nao_letivo">
+                <label for="nao_letivo">Dia não letivo</label>
+            </div>
+
+            <div class="rodape-form">
+                <button type="submit">Guardar Evento</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 <div class="card">
 
     {# ── Navegação do mês ─────────────────────────────────────────────── #}
@@ -469,108 +588,6 @@ Calendário do Centro
 
 </div>
 
-{# ── Formulários: Novo Teste / Novo Evento ─────────────────────────────── #}
-<div class="formularios-grid">
-
-    {# ── Novo Teste ───────────────────────────────────────────────────── #}
-    <div class="card">
-
-        <h3>Novo Teste</h3>
-
-        <form method="POST">
-
-            <input type="hidden" name="registo_tipo" value="teste">
-
-            <label class="campo-label">Escola</label>
-            <input
-                type="text"
-                name="escola"
-                list="lista-escolas"
-                required
-            >
-
-            <datalist id="lista-escolas">
-                {% for escola in escolas %}
-                    <option value="{{ escola }}"></option>
-                {% endfor %}
-            </datalist>
-
-            <label class="campo-label">Turma</label>
-            <input
-                type="text"
-                name="turma"
-                list="lista-turmas"
-                required
-            >
-
-            <datalist id="lista-turmas">
-                {% for turma in turmas %}
-                    <option value="{{ turma }}"></option>
-                {% endfor %}
-            </datalist>
-
-            <label class="campo-label">Disciplina</label>
-            <input type="text" name="disciplina" required>
-
-            <label class="campo-label">Data</label>
-            <input type="date" name="data_teste" required>
-
-            <label class="campo-label">Matriz</label>
-            <textarea name="matriz" rows="4"></textarea>
-
-            <label class="campo-label">Observações</label>
-            <textarea name="observacoes" rows="4"></textarea>
-
-            <div class="rodape-form">
-                <button type="submit">Guardar Teste</button>
-            </div>
-
-        </form>
-
-    </div>
-
-    {# ── Novo Evento do Centro ────────────────────────────────────────── #}
-    <div class="card">
-
-        <h3>Novo Evento do Centro</h3>
-
-        <form method="POST">
-
-            <input type="hidden" name="registo_tipo" value="evento">
-
-            <label class="campo-label">Data</label>
-            <input type="date" name="data" required>
-
-            <label class="campo-label">Tipo</label>
-            <select name="tipo" required>
-                <option value="Reunião">Reunião</option>
-                <option value="Aviso">Aviso</option>
-                <option value="Feriado">Feriado</option>
-                <option value="Paragem Letiva">Paragem Letiva</option>
-                <option value="Férias">Férias</option>
-                <option value="Outros">Outros</option>
-            </select>
-
-            <label class="campo-label">Título</label>
-            <input type="text" name="titulo" required>
-
-            <label class="campo-label">Descrição</label>
-            <textarea name="descricao" rows="4"></textarea>
-
-            <div class="campo-checkbox">
-                <input type="checkbox" name="nao_letivo" id="nao_letivo">
-                <label for="nao_letivo">Dia não letivo</label>
-            </div>
-
-            <div class="rodape-form">
-                <button type="submit">Guardar Evento</button>
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
 
 {# ── Todos os Registos ──────────────────────────────────────────────────── #}
 <div class="card">

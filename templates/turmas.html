@@ -146,21 +146,10 @@
             </p>
         </div>
 
-        <div class="actions">
-            <a class="btn primary" href="{{ url_for('turma.criar_turma') }}">
-                + Criar Turma
-            </a>
-
-            <a class="btn primary" href="{{ url_for('turma.atribuir_turma') }}">
-                Atribuir Turmas
-            </a>
-            <a class="btn primary" href="{{ url_for('turma.ver_horarios_consulta') }}">
-                Ver Horários
-            </a>
-        </div>
     </div>
 
-    <div class="card" style="margin-bottom:22px;">
+    {# BLOCO ATRIBUICAO DE SALAS retirado da lista de turmas (agora em Turmas > Salas)
+<div class="card" style="margin-bottom:22px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
             <div>
                 <h3 style="margin:0 0 5px 0;font-size:1.25rem;color:#0f172a;">
@@ -252,6 +241,7 @@
 
         {% endif %}
     </div>
+#}
 
     <div class="card">
 
@@ -280,9 +270,7 @@
                 <div class="row">
 
                     <div>
-                        <div class="nome">
-                            {{ t.nome }}
-                        </div>
+                        <div class="nome"><a href="{{ url_for('turma.turma_detalhe', id=t.id) }}" style="color:inherit;text-decoration:none;">{{ t.nome }}</a></div>
 
                         <div class="meta">
                             {% if t.ano_escolar %}
@@ -306,31 +294,21 @@
                     <div class="links">
 
                         <a class="link"
-                           href="{{ url_for('turma.turma_detalhe', id=t.id) }}">
-                            Abrir
-                        </a>
-
-                        <a class="link"
                            href="{{ url_for('turma.editar_turma', id=t.id) }}">
-                            Editar Turma
+                            Editar
                         </a>
 
-                        <a class="link"
-                           href="{{ url_for('turma.tabela_notas_turma', id=t.id) }}">
-                            Tabela de Notas
-                        </a>
-
-                        {% if (t.escola, t.nome) in turmas_com_horario %}
-                        <a class="link"
-                           href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">
-                            Editar Horário
-                        </a>
-{% else %}
-                        <a class="link"
-                           href="{{ url_for('horarios.novo_horario', turma_id=t.id) }}">
-                            Criar Horário
-                        </a>
-{% endif %}
+                        {% if session.perfil != "colaborador" %}
+                        <form method="POST"
+                              action="{{ url_for('turma.eliminar_turma', id=t.id) }}"
+                              style="display:inline;margin:0;"
+                              onsubmit="return confirm('Excluir esta turma? Os alunos não serão apagados; apenas ficarão sem turma. O horário da turma também será eliminado.')">
+                            <button type="submit" class="link"
+                                    style="border:0;cursor:pointer;font:inherit;color:#991b1b;background:#fee2e2;">
+                                Excluir
+                            </button>
+                        </form>
+                        {% endif %}
 
                     </div>
 
