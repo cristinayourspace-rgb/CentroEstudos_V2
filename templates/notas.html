@@ -253,76 +253,270 @@ Gestão de Notas
 </div>
 
 {# ── Formulário ──────────────────────────────────────────────────────── #}
-<div class="card">
+<div class="card" id="lancar-notas">
 
-    <h3>Registar Nota</h3>
+    <style>
+    .ln-ajuda{color:#6b7280;font-size:.85rem;margin:0}
+    .ln-linha{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+    .ln-linha select,.ln-linha input{width:100%;box-sizing:border-box}
+    .ln-sug{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px 0}
+    .ln-sug-tit{width:100%;font-size:.75rem;color:#6b7280;margin:0}
+    .ln-chip{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:5px 12px;font-size:.82rem;font-weight:600;cursor:pointer}
+    .ln-chip.ativo{background:#2563eb;color:#fff;border-color:#2563eb}
+    .ln-scroll{overflow-x:auto}
+    .ln-tabela{width:100%;border-collapse:collapse;margin-top:6px}
+    .ln-tabela th{text-align:left;font-size:.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid #e5e7eb}
+    .ln-tabela td{padding:6px 8px;border-bottom:1px solid #f1f5f9}
+    .ln-nota{width:110px;padding:6px 8px;border:1px solid #e5e7eb;border-radius:10px}
+    .ln-excluir{border:0;background:#fee2e2;color:#991b1b;border-radius:10px;padding:5px 12px;font-weight:600;cursor:pointer}
+    .ln-rodape{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .ln-rodape button{background:#2563eb;color:#fff;border:0;border-radius:12px;padding:10px 20px;font-weight:600;cursor:pointer}
+    .ln-rodape button:disabled{background:#cbd5e1;cursor:not-allowed}
+    .ln-aviso{margin:0 0 10px 0;padding:8px 12px;border-radius:10px;font-size:.88rem}
+    .ln-aviso.ok{background:#ecfdf5;color:#047857}
+    .ln-aviso.erro{background:#fef2f2;color:#b91c1c}
+    </style>
 
-    <form method="POST">
+    <h3>Registar notas</h3>
+    <p class="ln-ajuda">Escolha a turma, a disciplina e a data do teste, escreva as notas e guarde tudo de uma vez.</p>
 
-        <div class="form-grid">
-
-            <div>
-                <label for="aluno_id" class="campo-label">
-                    Aluno
-                </label>
-                <select name="aluno_id" id="aluno_id" required>
-                    <option value="">Selecione um aluno</option>
-                    {% for aluno in alunos %}
-                    <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label for="disciplina" class="campo-label">
-                    Disciplina
-                </label>
-                <input
-                    type="text"
-                    name="disciplina"
-                    id="disciplina"
-                    placeholder="ex: Matemática"
-                    required
-                >
-            </div>
-
-            <div>
-                <label for="nota" class="campo-label">
-                    Nota (0 a 100)
-                </label>
-                <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    name="nota"
-                    id="nota"
-                    placeholder="ex: 78.5"
-                    required
-                >
-            </div>
-
-            <div>
-                <label for="data_avaliacao" class="campo-label">
-                    Data da Avaliação
-                </label>
-                <input
-                    type="date"
-                    name="data_avaliacao"
-                    id="data_avaliacao"
-                    required
-                >
-            </div>
-
+    <div class="ln-linha">
+        <div>
+            <label for="ln-turma" class="campo-label">Turma</label>
+            <select id="ln-turma"><option value="">Selecione uma turma</option></select>
         </div>
-
-        <div class="rodape-form">
-            <button type="submit" class="btn-guardar-nota">
-                Guardar Nota
-            </button>
+        <div>
+            <label for="ln-disc" class="campo-label">Disciplina</label>
+            <select id="ln-disc" disabled><option value="">Selecione a disciplina</option></select>
         </div>
+        <div>
+            <label for="ln-data" class="campo-label">Data do teste</label>
+            <input type="date" id="ln-data">
+        </div>
+    </div>
 
-    </form>
+    <div class="ln-sug" id="ln-sugestoes"></div>
+    <div class="ln-aviso" id="ln-aviso" hidden></div>
+
+    <div class="ln-scroll">
+        <table class="ln-tabela" id="ln-tabela" hidden>
+            <thead><tr><th>Aluno</th><th>Nota (0 a 100)</th><th></th></tr></thead>
+            <tbody id="ln-corpo"></tbody>
+        </table>
+    </div>
+
+    <div class="ln-rodape">
+        <span class="ln-ajuda">Guarde antes de excluir ou de mudar de data. Para apagar uma nota use o bot&atilde;o Excluir.</span>
+        <button type="button" id="ln-guardar" disabled>Guardar notas</button>
+    </div>
+
+    <script>
+    (function () {
+        var selTurma = document.getElementById('ln-turma');
+        var selDisc = document.getElementById('ln-disc');
+        var inpData = document.getElementById('ln-data');
+        var boxSug = document.getElementById('ln-sugestoes');
+        var caixaAviso = document.getElementById('ln-aviso');
+        var tabela = document.getElementById('ln-tabela');
+        var corpo = document.getElementById('ln-corpo');
+        var btnGuardar = document.getElementById('ln-guardar');
+        if (!selTurma || !corpo) { return; }
+
+        var alunos = [];
+        var existentes = {};
+
+        function aviso(texto, tipo) {
+            caixaAviso.textContent = texto || '';
+            caixaAviso.className = 'ln-aviso' + (texto ? ' ' + (tipo || 'ok') : '');
+            caixaAviso.hidden = !texto;
+        }
+
+        function pedir(url, opcoes) {
+            return fetch(url, opcoes).then(function (resposta) {
+                return resposta.json().then(function (resultado) {
+                    if (!resposta.ok) {
+                        throw new Error((resultado && resultado.erro) || 'Erro ao comunicar com o servidor.');
+                    }
+                    return resultado;
+                }, function () {
+                    throw new Error('Resposta inesperada do servidor. Recarregue a p\u00e1gina e tente outra vez.');
+                });
+            });
+        }
+
+        function atualizarBotao() {
+            btnGuardar.disabled = !(selTurma.value && selDisc.value && inpData.value);
+        }
+
+        function formatarData(iso) {
+            return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
+        }
+
+        function desenharSugestoes(lista) {
+            boxSug.textContent = '';
+            if (!lista || !lista.length) { return; }
+            var titulo = document.createElement('p');
+            titulo.className = 'ln-sug-tit';
+            titulo.textContent = 'Datas de testes do Calend\u00e1rio com notas por lan\u00e7ar:';
+            boxSug.appendChild(titulo);
+            lista.forEach(function (s) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'ln-chip' + (inpData.value === s.data ? ' ativo' : '');
+                var estado = s.lancadas === 0 ? 'por lan\u00e7ar' : s.lancadas + ' de ' + s.total + ' alunos';
+                b.textContent = formatarData(s.data) + ' \u00b7 ' + estado;
+                b.addEventListener('click', function () {
+                    inpData.value = s.data;
+                    atualizarBotao();
+                    carregarLote();
+                });
+                boxSug.appendChild(b);
+            });
+        }
+
+        function desenharTabela() {
+            corpo.textContent = '';
+            alunos.forEach(function (aluno) {
+                var tr = document.createElement('tr');
+                var tdNome = document.createElement('td');
+                tdNome.textContent = aluno.nome;
+                var tdNota = document.createElement('td');
+                var campo = document.createElement('input');
+                campo.type = 'number';
+                campo.min = '0';
+                campo.max = '100';
+                campo.step = '0.01';
+                campo.className = 'ln-nota';
+                campo.setAttribute('data-aluno', aluno.id);
+                tdNota.appendChild(campo);
+                var tdAcao = document.createElement('td');
+                var excluir = document.createElement('button');
+                excluir.type = 'button';
+                excluir.className = 'ln-excluir';
+                excluir.textContent = 'Excluir';
+                excluir.hidden = true;
+                excluir.setAttribute('data-aluno', aluno.id);
+                excluir.addEventListener('click', function () { apagarNota(aluno.id); });
+                tdAcao.appendChild(excluir);
+                tr.appendChild(tdNome);
+                tr.appendChild(tdNota);
+                tr.appendChild(tdAcao);
+                corpo.appendChild(tr);
+            });
+            tabela.hidden = alunos.length === 0;
+            if (!alunos.length && selTurma.value) {
+                aviso('Esta turma ainda n\u00e3o tem alunos ativos.', 'erro');
+            }
+        }
+
+        function preencherNotas() {
+            corpo.querySelectorAll('input.ln-nota').forEach(function (campo) {
+                var info = existentes[campo.getAttribute('data-aluno')];
+                campo.value = info ? info.nota : '';
+            });
+            corpo.querySelectorAll('button.ln-excluir').forEach(function (b) {
+                b.hidden = !existentes[b.getAttribute('data-aluno')];
+            });
+        }
+
+        function carregarLote() {
+            if (!selTurma.value || !selDisc.value) {
+                boxSug.textContent = '';
+                existentes = {};
+                preencherNotas();
+                return Promise.resolve();
+            }
+            var url = '/notas/api/lote?turma_id=' + encodeURIComponent(selTurma.value)
+                + '&disciplina=' + encodeURIComponent(selDisc.value)
+                + '&data=' + encodeURIComponent(inpData.value || '');
+            return pedir(url).then(function (r) {
+                existentes = r.existentes || {};
+                preencherNotas();
+                desenharSugestoes(r.sugestoes);
+            }).catch(function (e) { aviso(e.message, 'erro'); });
+        }
+
+        function carregarTurma() {
+            aviso('');
+            existentes = {};
+            boxSug.textContent = '';
+            selDisc.textContent = '';
+            var vazio = document.createElement('option');
+            vazio.value = '';
+            vazio.textContent = 'Selecione a disciplina';
+            selDisc.appendChild(vazio);
+            if (!selTurma.value) {
+                alunos = [];
+                desenharTabela();
+                selDisc.disabled = true;
+                atualizarBotao();
+                return;
+            }
+            pedir('/notas/api/turma/' + encodeURIComponent(selTurma.value)).then(function (r) {
+                (r.disciplinas || []).forEach(function (d) {
+                    var o = document.createElement('option');
+                    o.value = d;
+                    o.textContent = d;
+                    selDisc.appendChild(o);
+                });
+                selDisc.disabled = false;
+                alunos = r.alunos || [];
+                desenharTabela();
+                atualizarBotao();
+            }).catch(function (e) { aviso(e.message, 'erro'); });
+        }
+
+        function apagarNota(alunoId) {
+            var info = existentes[String(alunoId)];
+            if (!info) { return; }
+            if (!window.confirm('Excluir esta nota?')) { return; }
+            pedir('/notas/api/apagar/' + info.id, { method: 'POST' }).then(function () {
+                aviso('Nota exclu\u00edda.', 'ok');
+                return carregarLote();
+            }).catch(function (e) { aviso(e.message, 'erro'); });
+        }
+
+        btnGuardar.addEventListener('click', function () {
+            var notas = {};
+            corpo.querySelectorAll('input.ln-nota').forEach(function (campo) {
+                if (campo.value !== '') { notas[campo.getAttribute('data-aluno')] = campo.value; }
+            });
+            if (!Object.keys(notas).length) {
+                aviso('Escreva pelo menos uma nota.', 'erro');
+                return;
+            }
+            btnGuardar.disabled = true;
+            pedir('/notas/api/lote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    turma_id: Number(selTurma.value),
+                    disciplina: selDisc.value,
+                    data: inpData.value,
+                    notas: notas
+                })
+            }).then(function (r) {
+                aviso('Guardado: ' + r.criadas + ' nova(s) e ' + r.atualizadas + ' atualizada(s). A lista e os gr\u00e1ficos abaixo atualizam quando recarregar a p\u00e1gina.', 'ok');
+                return carregarLote();
+            }).catch(function (e) {
+                aviso(e.message, 'erro');
+            }).then(atualizarBotao);
+        });
+
+        selTurma.addEventListener('change', carregarTurma);
+        selDisc.addEventListener('change', function () { atualizarBotao(); carregarLote(); });
+        inpData.addEventListener('change', function () { atualizarBotao(); carregarLote(); });
+
+        pedir('/notas/api/turmas').then(function (lista) {
+            lista.forEach(function (t) {
+                var o = document.createElement('option');
+                o.value = t.id;
+                o.textContent = t.rotulo;
+                selTurma.appendChild(o);
+            });
+        }).catch(function (e) { aviso(e.message, 'erro'); });
+    })();
+    </script>
 
 </div>
 
