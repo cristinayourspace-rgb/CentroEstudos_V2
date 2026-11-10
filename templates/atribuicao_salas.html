@@ -17,6 +17,15 @@
                style="display:block;text-align:center;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;text-decoration:none;color:#0f172a;font-weight:600;">{{ titulo }}</a>
             {% endfor %}
         </div>
+        <div id="modal-dia-cancelar" style="margin-top:14px;text-align:center;">
+            <a href="{{ url_for('turma.turmas') }}"
+               style="display:inline-block;padding:8px 18px;border:1px solid #cbd5e1;border-radius:10px;text-decoration:none;color:#475569;">Cancelar</a>
+        </div>
+        <script>
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { window.location.href = "{{ url_for('turma.turmas') }}"; }
+            });
+        </script>
     </div>
 </div>
 {% else %}
