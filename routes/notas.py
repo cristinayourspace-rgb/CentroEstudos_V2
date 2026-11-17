@@ -119,12 +119,32 @@ def editar_nota(id):
 
         db.session.commit()
 
-        return redirect("/notas")
+        return redirect(_destino_voltar(request.form.get("voltar") or request.args.get("voltar")))
 
     return render_template(
         "editar_nota.html",
-        nota=nota
+        nota=nota,
+        voltar=_destino_voltar(request.args.get("voltar"))
     )
+
+
+def _destino_voltar(valor):
+    """So aceita a ficha de um aluno; qualquer outro valor volta a /notas."""
+    import re as _re
+    valor = (valor or "").strip()
+    if _re.fullmatch(r"/alunos/ver/\d+", valor):
+        return valor
+    return "/notas"
+
+
+@notas_bp.route("/notas/eliminar/<int:id>", methods=["POST"])
+def eliminar_nota(id):
+    if session.get("perfil") == "colaborador":
+        return render_template("acesso_negado.html")
+    nota = Nota.query.get_or_404(id)
+    db.session.delete(nota)
+    db.session.commit()
+    return redirect(_destino_voltar(request.form.get("voltar")))
 
 
 @notas_bp.route("/notas/apagar/<int:id>")

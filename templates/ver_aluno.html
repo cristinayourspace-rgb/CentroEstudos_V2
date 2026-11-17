@@ -510,6 +510,7 @@ Ficha do Aluno
    ══════════════════════════════════════════════════════════════════════════ #}
 <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 mb-6">
     <h2 class="text-xl font-bold text-gray-800 mb-4">Histórico de Notas</h2>
+    {% set pode_editar_notas = (session.get('perfil') != 'colaborador') %}
 
     {% if notas %}
 
@@ -522,6 +523,7 @@ Ficha do Aluno
                         <th>Disciplina</th>
                         <th>Nota</th>
                         <th>Data</th>
+                        {% if pode_editar_notas %}<th>Ações</th>{% endif %}
                     </tr>
                 </thead>
 
@@ -533,6 +535,13 @@ Ficha do Aluno
                         <td>{{ nota.disciplina }}</td>
                         <td>{{ nota.nota }}</td>
                         <td>{{ nota.data_avaliacao }}</td>
+                        {% if pode_editar_notas %}<td><div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+  <a href="/notas/editar/{{ nota.id }}?voltar=/alunos/ver/{{ nota.aluno_id }}" style="padding:4px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;text-decoration:none;color:#334155;">Editar</a>
+  <form method="post" action="/notas/eliminar/{{ nota.id }}" style="margin:0;" onsubmit="return confirm('Eliminar esta nota? Esta ação não pode ser desfeita.');">
+    <input type="hidden" name="voltar" value="/alunos/ver/{{ nota.aluno_id }}">
+    <button type="submit" style="padding:4px 10px;border:1px solid #fecaca;border-radius:8px;font-size:13px;background:#fef2f2;color:#b91c1c;cursor:pointer;">Eliminar</button>
+  </form>
+</div></td>{% endif %}
                     </tr>
 
                 {% endfor %}
@@ -564,6 +573,14 @@ Ficha do Aluno
                         <div class="resp-label">Data</div>
                         <div class="resp-valor">{{ nota.data_avaliacao }}</div>
                     </div>
+
+                    {% if pode_editar_notas %}<div class="resp-campo-full"><div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+  <a href="/notas/editar/{{ nota.id }}?voltar=/alunos/ver/{{ nota.aluno_id }}" style="padding:4px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;text-decoration:none;color:#334155;">Editar</a>
+  <form method="post" action="/notas/eliminar/{{ nota.id }}" style="margin:0;" onsubmit="return confirm('Eliminar esta nota? Esta ação não pode ser desfeita.');">
+    <input type="hidden" name="voltar" value="/alunos/ver/{{ nota.aluno_id }}">
+    <button type="submit" style="padding:4px 10px;border:1px solid #fecaca;border-radius:8px;font-size:13px;background:#fef2f2;color:#b91c1c;cursor:pointer;">Eliminar</button>
+  </form>
+</div></div>{% endif %}
 
                 </div>
             </div>

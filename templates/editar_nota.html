@@ -13,6 +13,7 @@ Editar Nota
     <br>
 
     <form method="POST">
+<input type="hidden" name="voltar" value="{{ voltar or '' }}">
 
         <label>Disciplina</label>
 
@@ -48,7 +49,7 @@ Editar Nota
             Guardar Alterações
         </button>
 
-        <a href="/notas">
+        <a href="{{ voltar or '/notas' }}">
             Cancelar
         </a>
 
