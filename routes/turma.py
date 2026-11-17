@@ -528,11 +528,13 @@ def atribuicao_salas():
 
         db.session.commit()
 
+        flash("Atribuição de salas guardada com sucesso.", "success")
         return redirect(
             url_for(
-                "turma.turmas",
-                salas_guardadas=1,
-            )
+                "turma.atribuicao_salas",
+                dia=dia_escolhido,
+                guardado=1,
+            ) + f"#dia-{dia_escolhido}"
         )
 
     dados = obter_atribuicao_salas_semanal()

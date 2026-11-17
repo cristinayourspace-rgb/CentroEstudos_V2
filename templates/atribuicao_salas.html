@@ -635,4 +635,42 @@ document.addEventListener('DOMContentLoaded', recalcularContagem);
 
 recalcularContagem();
 </script>
+<script>
+/* Esconde as turmas ja escolhidas. MODO: 'dia' ou 'semana' */
+(function () {
+    var MODO = 'dia';
+
+    function chave(sel) {
+        var p = sel.name.split('__');
+        return MODO === 'dia' ? p[1] : 'todos';
+    }
+
+    function atualizarTurmasDisponiveis() {
+        var sels = [].slice.call(document.querySelectorAll('select[name^="turma__"]'));
+        var usadas = {};
+        sels.forEach(function (s) {
+            if (s.value) {
+                var k = chave(s);
+                usadas[k] = usadas[k] || {};
+                usadas[k][s.value] = true;
+            }
+        });
+        sels.forEach(function (s) {
+            var u = usadas[chave(s)] || {};
+            [].forEach.call(s.options, function (o) {
+                if (!o.value) return;
+                var ocupada = !!u[o.value] && o.value !== s.value;
+                o.hidden = ocupada;
+                o.disabled = ocupada;
+            });
+        });
+    }
+
+    document.addEventListener('change', atualizarTurmasDisponiveis);
+    document.addEventListener('click', function () { setTimeout(atualizarTurmasDisponiveis, 80); });
+    document.addEventListener('DOMContentLoaded', atualizarTurmasDisponiveis);
+    new MutationObserver(atualizarTurmasDisponiveis).observe(document.body, { childList: true, subtree: true });
+    atualizarTurmasDisponiveis();
+})();
+</script>
 {% endblock %}

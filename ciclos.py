@@ -32,7 +32,12 @@ def _norm(texto):
 
 
 def disciplina_norm(texto):
-    return CANON.get(_norm(texto), (texto or "").strip() or "Sem disciplina")
+    n = _norm(texto)
+    if n in CANON:
+        return CANON[n]
+    if " " not in n and _parece_matematica(n):
+        return "Matem\u00e1tica"
+    return (texto or "").strip() or "Sem disciplina"
 
 
 CIENCIAS_VARIANTES = ("ciencias", "ciencias naturais", "ciencias da natureza")
@@ -42,7 +47,12 @@ def disciplina_ciencias(texto):
     """Junta Ciencias, Ciencias Naturais e Ciencias da Natureza num so nome (Ciencias).
     Outros valores ficam como estao (sem espacos nas pontas)."""
     t = (texto or "").strip()
-    return "Ci\u00eancias" if _norm(t) in CIENCIAS_VARIANTES else t
+    n = _norm(t)
+    if n in CIENCIAS_VARIANTES:
+        return "Ci\u00eancias"
+    if " " not in n and _parece_matematica(n):
+        return "Matem\u00e1tica"
+    return t
 
 
 def ano_de(texto):
@@ -240,3 +250,8 @@ def criar_blueprint_ciclos(db, proteger=None):
         return jsonify(medias_notas([dict(l) for l in linhas], metodo))
 
     return bp
+
+def _parece_matematica(n):
+    """True para 'matematica' e erros de escrita parecidos (ex.: matematca)."""
+    import difflib
+    return n == "matematica" or difflib.SequenceMatcher(None, n, "matematica").ratio() >= 0.85
