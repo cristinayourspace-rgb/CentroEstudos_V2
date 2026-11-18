@@ -292,8 +292,11 @@ Ficha do Aluno
 
     <div class="flex flex-col sm:flex-row flex-wrap gap-3">
 
+        {% set _tel_wa = (aluno.telefone or '')|replace('+','')|replace(' ','')|replace('-','')|replace('.','')|replace('(','')|replace(')','') %}
+        {% if _tel_wa.startswith('00') %}{% set _tel_wa = _tel_wa[2:] %}{% endif %}
+        {% if _tel_wa|length == 9 %}{% set _tel_wa = '351' ~ _tel_wa %}{% endif %}
         <a
-            href="https://wa.me/{{ aluno.telefone|replace('+','')|replace(' ','') }}"
+            href="https://wa.me/{{ _tel_wa }}"
             target="_blank"
             class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white font-semibold text-sm shadow-sm hover:bg-green-700 transition-colors"
         >

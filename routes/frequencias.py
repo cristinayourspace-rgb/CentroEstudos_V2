@@ -478,18 +478,25 @@ def utilizador_pode_alterar_registos():
     ]
 
 
+def formatar_telefone_whatsapp(telefone):
+    import re
+
+    digitos = re.sub(r"\D", "", telefone or "")
+
+    if digitos.startswith("00"):
+        digitos = digitos[2:]
+
+    if len(digitos) == 9:
+        digitos = "351" + digitos
+
+    return digitos
+
+
 def criar_whatsapp_link(aluno, texto):
-    telefone = (
-        aluno.telefone.replace("+", "").replace(" ", "")
-        if aluno.telefone
-        else ""
-    )
+    telefone = formatar_telefone_whatsapp(aluno.telefone)
 
     if not telefone:
         return None
-
-    if not telefone.startswith("351"):
-        telefone = "351" + telefone
 
     return (
         f"https://wa.me/{telefone}"
