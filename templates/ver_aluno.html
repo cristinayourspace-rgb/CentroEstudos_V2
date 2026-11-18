@@ -533,7 +533,7 @@ Ficha do Aluno
 
                     <tr>
                         <td>{{ nota.disciplina }}</td>
-                        <td>{{ nota.nota }}</td>
+                        <td>{% if nota.nota is not none and nota.nota|float < 50 %}<span style="color:#dc2626;font-weight:700;">{{ nota.nota }}</span>{% else %}{{ nota.nota }}{% endif %}</td>
                         <td>{{ nota.data_avaliacao }}</td>
                         {% if pode_editar_notas %}<td><div style="display:flex;gap:8px;align-items:center;justify-content:center;">
   <a href="/notas/editar/{{ nota.id }}?voltar=/alunos/ver/{{ nota.aluno_id }}" style="padding:4px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;text-decoration:none;color:#334155;">Editar</a>
@@ -566,7 +566,7 @@ Ficha do Aluno
 
                     <div>
                         <div class="resp-label">Nota</div>
-                        <div class="resp-valor">{{ nota.nota }}</div>
+                        <div class="resp-valor">{% if nota.nota is not none and nota.nota|float < 50 %}<span style="color:#dc2626;font-weight:700;">{{ nota.nota }}</span>{% else %}{{ nota.nota }}{% endif %}</div>
                     </div>
 
                     <div>
@@ -808,6 +808,73 @@ const ctx = document.getElementById(
     "graficoNotas"
 );
 
+const VERMELHO = "#dc2626";
+
+/* Cor fixa por disciplina (o vermelho fica reservado para notas < 50) */
+const CORES_DISCIPLINAS = {
+    "matematica": "#2563eb",
+    "portugues": "#16a34a",
+    "ingles": "#9333ea",
+    "ciencias": "#0d9488",
+    "fisico-quimica": "#ea580c",
+    "historia": "#ca8a04",
+    "geografia": "#0891b2",
+    "frances": "#db2777",
+    "espanhol": "#7c3aed",
+    "biologia": "#65a30d",
+    "geologia": "#92400e",
+    "fisica": "#4f46e5",
+    "quimica": "#c026d3",
+    "filosofia": "#475569",
+    "economia": "#b45309"
+};
+
+const PALETA_EXTRA = ["#0369a1", "#15803d", "#a16207", "#6d28d9", "#0f766e", "#be185d", "#4d7c0f", "#1d4ed8"];
+
+function normalizar(t) {
+    return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function corDisciplina(nome) {
+    const n = normalizar(nome);
+    if (CORES_DISCIPLINAS[n]) return CORES_DISCIPLINAS[n];
+    for (const k in CORES_DISCIPLINAS) {
+        if (n.includes(k)) return CORES_DISCIPLINAS[k];
+    }
+    let h = 0;
+    for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+    return PALETA_EXTRA[h % PALETA_EXTRA.length];
+}
+
+const datasetsGrafico = {{ datasets_grafico | tojson }}.map(function (ds) {
+
+    const cor = corDisciplina(ds.label);
+
+    function valor(i) {
+        const p = ds.data[i];
+        if (p === null || p === undefined) return NaN;
+        if (typeof p === "object") return Number(p.y);
+        return Number(p);
+    }
+
+    function corPonto(c) {
+        return (valor(c.dataIndex) < 50) ? VERMELHO : cor;
+    }
+
+    ds.borderColor = cor;
+    ds.backgroundColor = cor;
+    ds.pointBackgroundColor = corPonto;
+    ds.pointBorderColor = corPonto;
+    ds.pointRadius = 5;
+    ds.pointHoverRadius = 7;
+
+    return ds;
+});
+
+function eLinha50(c) {
+    return c.tick && c.tick.value === 50;
+}
+
 new Chart(ctx, {
 
     type: "line",
@@ -816,7 +883,7 @@ new Chart(ctx, {
 
         labels: {{ labels_grafico | tojson }},
 
-        datasets: {{ datasets_grafico | tojson }}
+        datasets: datasetsGrafico
 
     },
 
@@ -843,6 +910,19 @@ new Chart(ctx, {
                 title: {
                     display: true,
                     text: "Nota"
+                },
+
+                ticks: {
+                    stepSize: 10,
+                    color: function (c) { return eLinha50(c) ? "#111827" : "#6b7280"; },
+                    font: function (c) {
+                        return eLinha50(c) ? { size: 18, weight: "bold" } : { size: 12 };
+                    }
+                },
+
+                grid: {
+                    color: function (c) { return eLinha50(c) ? "#111827" : "rgba(0,0,0,0.1)"; },
+                    lineWidth: function (c) { return eLinha50(c) ? 3 : 1; }
                 }
 
             },
