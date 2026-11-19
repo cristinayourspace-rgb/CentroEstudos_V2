@@ -815,24 +815,25 @@ const VERMELHO = "#dc2626";
 
 /* Cor fixa por disciplina (o vermelho fica reservado para notas < 50) */
 const CORES_DISCIPLINAS = {
-    "matematica": "#2563eb",
+    /* paleta v2 contrastada */
+    "matematica": "#1d4ed8",
     "portugues": "#16a34a",
-    "ingles": "#9333ea",
-    "ciencias": "#0d9488",
-    "fisico-quimica": "#ea580c",
-    "historia": "#ca8a04",
-    "geografia": "#0891b2",
-    "frances": "#db2777",
-    "espanhol": "#7c3aed",
-    "biologia": "#65a30d",
-    "geologia": "#92400e",
-    "fisica": "#4f46e5",
-    "quimica": "#c026d3",
-    "filosofia": "#475569",
-    "economia": "#b45309"
+    "ingles": "#f97316",
+    "ciencias": "#7e22ce",
+    "fisico-quimica": "#06b6d4",
+    "historia": "#78350f",
+    "geografia": "#eab308",
+    "frances": "#ec4899",
+    "espanhol": "#64748b",
+    "biologia": "#84cc16",
+    "geologia": "#0f766e",
+    "fisica": "#a21caf",
+    "quimica": "#0ea5e9",
+    "filosofia": "#9a3412",
+    "economia": "#4338ca"
 };
 
-const PALETA_EXTRA = ["#0369a1", "#15803d", "#a16207", "#6d28d9", "#0f766e", "#be185d", "#4d7c0f", "#1d4ed8"];
+const PALETA_EXTRA = ["#14b8a6", "#f472b6", "#a3a3a3", "#c2410c", "#3b82f6", "#65a30d", "#a855f7", "#0891b2"];
 
 function normalizar(t) {
     return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -866,6 +867,7 @@ const datasetsGrafico = {{ datasets_grafico | tojson }}.map(function (ds) {
 
     ds.borderColor = cor;
     ds.backgroundColor = cor;
+    ds.borderWidth = 3;
     ds.pointBackgroundColor = corPonto;
     ds.pointBorderColor = corPonto;
     ds.pointRadius = 5;
